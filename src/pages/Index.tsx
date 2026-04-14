@@ -1,127 +1,213 @@
 import { useState, useMemo } from "react";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, X, Lightbulb, Wrench, PackageOpen } from "lucide-react";
 import Header from "@/components/Header";
 import ToolCard from "@/components/ToolCard";
 import ToolFormDialog from "@/components/ToolFormDialog";
+import IdeaCard from "@/components/IdeaCard";
+import IdeaFormDialog from "@/components/IdeaFormDialog";
+import PublishLinkDialog from "@/components/PublishLinkDialog";
+import SkeletonCard from "@/components/SkeletonCard";
 import { useToolStore } from "@/hooks/useToolStore";
-import { Tool } from "@/types/tool";
+import { Tool, Idea } from "@/types/tool";
 
-type Tab = "Tool" | "Planning";
+type Tab = "Tool" | "Ide";
+type Filter = "Semua" | "Published" | "Draft";
 
 export default function Index() {
-  const { tools, addTool, updateTool, deleteTool, stats } = useToolStore();
+  const {
+    tools, addTool, updateTool, deleteTool, toggleToolDone, toggleNote,
+    ideas, addIdea, updateIdea, deleteIdea, moveIdeaToTool,
+    stats, loading,
+  } = useToolStore();
+
   const [tab, setTab] = useState<Tab>("Tool");
+  const [filter, setFilter] = useState<Filter>("Semua");
   const [search, setSearch] = useState("");
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [toolDialogOpen, setToolDialogOpen] = useState(false);
   const [editTool, setEditTool] = useState<Tool | null>(null);
+  const [ideaDialogOpen, setIdeaDialogOpen] = useState(false);
+  const [editIdea, setEditIdea] = useState<Idea | null>(null);
+  const [publishLinkTool, setPublishLinkTool] = useState<Tool | null>(null);
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return tools.filter((t) => t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
-  }, [tools, search]);
-
-  const pending = filtered.filter((t) => t.status === "Pending");
-  const published = filtered.filter((t) => t.status === "Publish");
-
-  const handleSave = (data: any) => {
-    if (editTool) {
-      updateTool(editTool.id, data);
-    } else {
-      addTool(data);
+    let result = tools;
+    if (filter === "Published") result = result.filter((t) => t.status === "Published");
+    if (filter === "Draft") result = result.filter((t) => t.status === "Draft");
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter((t) => t.name.toLowerCase().includes(q));
     }
+    return result;
+  }, [tools, filter, search]);
+
+  const filteredIdeas = useMemo(() => {
+    if (!search) return ideas;
+    const q = search.toLowerCase();
+    return ideas.filter((i) => i.name.toLowerCase().includes(q) || i.description.toLowerCase().includes(q));
+  }, [ideas, search]);
+
+  const handleSaveTool = (data: any) => {
+    if (editTool) updateTool(editTool.id, data);
+    else addTool(data);
     setEditTool(null);
   };
 
-  const handleEdit = (tool: Tool) => {
-    setEditTool(tool);
-    setDialogOpen(true);
+  const handleEditTool = (tool: Tool) => { setEditTool(tool); setToolDialogOpen(true); };
+  const handleDeleteTool = (id: string) => { if (confirm("Hapus tool ini?")) deleteTool(id); };
+
+  const handleSaveIdea = (data: any) => {
+    if (editIdea) updateIdea(editIdea.id, data);
+    else addIdea(data);
+    setEditIdea(null);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Hapus tool ini?")) deleteTool(id);
+  const handleEditIdea = (idea: Idea) => { setEditIdea(idea); setIdeaDialogOpen(true); };
+  const handleDeleteIdea = (id: string) => { if (confirm("Hapus ide ini?")) deleteIdea(id); };
+
+  const handlePublishLink = (link: string) => {
+    if (publishLinkTool) updateTool(publishLinkTool.id, { link });
+  };
+
+  const handleMoveIdea = (id: string) => {
+    if (confirm("Pindahkan ide ini ke Tool Tracker?")) moveIdeaToTool(id);
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Header stats={stats} />
 
-      {/* Tabs & Search */}
-      <div className="px-4 py-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        <div className="flex gap-1">
-          {(["Tool", "Planning"] as Tab[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-5 py-2 rounded-full text-sm font-semibold transition-colors ${
-                tab === t ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+      <div className="max-w-6xl mx-auto">
+        {/* Tabs & Search */}
+        <div className="px-4 py-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+          <div className="flex gap-1 bg-muted/40 rounded-xl p-1">
+            {([
+              { key: "Tool" as Tab, icon: <Wrench size={14} />, label: "Tool Tracker" },
+              { key: "Ide" as Tab, icon: <Lightbulb size={14} />, label: "Ide" },
+            ]).map(({ key, icon, label }) => (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  tab === key ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {icon} {label}
+              </button>
+            ))}
+          </div>
+
+          {tab === "Tool" && (
+            <div className="flex gap-1 bg-muted/40 rounded-xl p-1">
+              {(["Semua", "Published", "Draft"] as Filter[]).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    filter === f ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="relative flex-1 w-full sm:w-auto sm:max-w-xs ml-auto">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              className="w-full bg-muted/40 border border-border/40 rounded-xl pl-9 pr-9 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+              placeholder="Cari..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X size={14} />
+              </button>
+            )}
+          </div>
         </div>
-        <div className="relative flex-1 w-full sm:w-auto">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            className="w-full bg-muted border border-border rounded-full pl-9 pr-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            placeholder="Cari..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+
+        {/* Content */}
+        {tab === "Tool" ? (
+          <div className="px-4 pb-24">
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
+                <PackageOpen size={48} className="text-muted-foreground/40" />
+                <p className="text-sm">{search ? "Tidak ditemukan" : "Belum ada tool"}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filtered.map((tool) => (
+                  <ToolCard
+                    key={tool.id}
+                    tool={tool}
+                    onEdit={handleEditTool}
+                    onDelete={handleDeleteTool}
+                    onToggleDone={toggleToolDone}
+                    onToggleNote={toggleNote}
+                    onPublishLink={(t) => setPublishLinkTool(t)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="px-4 pb-24">
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2].map((i) => <SkeletonCard key={i} />)}
+              </div>
+            ) : filteredIdeas.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
+                <Lightbulb size={48} className="text-muted-foreground/40" />
+                <p className="text-sm">{search ? "Tidak ditemukan" : "Belum ada ide — catat ide pertamamu!"}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredIdeas.map((idea) => (
+                  <IdeaCard key={idea.id} idea={idea} onEdit={handleEditIdea} onDelete={handleDeleteIdea} onMoveToTool={handleMoveIdea} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
-
-      {tab === "Tool" ? (
-        <div className="px-4 pb-24">
-          {/* Pending */}
-          {pending.length > 0 && (
-            <section className="mb-8">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">DALAM PROSES</span>
-                <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{pending.length}</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {pending.map((tool) => (
-                  <ToolCard key={tool.id} tool={tool} onEdit={handleEdit} onDelete={handleDelete} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Published */}
-          {published.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-4 justify-center">
-                <div className="w-2 h-2 rounded-full bg-status-publish" />
-                <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">PUBLISH ({published.length})</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                {published.map((tool) => (
-                  <ToolCard key={tool.id} tool={tool} onEdit={handleEdit} onDelete={handleDelete} />
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
-      ) : (
-        <div className="px-4 py-12 text-center text-muted-foreground">
-          <p className="text-lg">Planning board segera hadir 🚀</p>
-        </div>
-      )}
 
       {/* FAB */}
       <button
-        onClick={() => { setEditTool(null); setDialogOpen(true); }}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 transition-transform z-40"
+        onClick={() => {
+          if (tab === "Tool") { setEditTool(null); setToolDialogOpen(true); }
+          else { setEditIdea(null); setIdeaDialogOpen(true); }
+        }}
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-105 transition-transform z-40"
       >
-        <Plus size={28} />
+        <Plus size={26} />
       </button>
 
       <ToolFormDialog
-        open={dialogOpen}
-        onClose={() => { setDialogOpen(false); setEditTool(null); }}
-        onSave={handleSave}
+        open={toolDialogOpen}
+        onClose={() => { setToolDialogOpen(false); setEditTool(null); }}
+        onSave={handleSaveTool}
         editTool={editTool}
+      />
+
+      <IdeaFormDialog
+        open={ideaDialogOpen}
+        onClose={() => { setIdeaDialogOpen(false); setEditIdea(null); }}
+        onSave={handleSaveIdea}
+        editIdea={editIdea}
+      />
+
+      <PublishLinkDialog
+        open={!!publishLinkTool}
+        onClose={() => setPublishLinkTool(null)}
+        onSave={handlePublishLink}
+        toolName={publishLinkTool?.name || ""}
       />
     </div>
   );
