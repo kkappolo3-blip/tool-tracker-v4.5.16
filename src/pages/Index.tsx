@@ -6,6 +6,7 @@ import ToolFormDialog from "@/components/ToolFormDialog";
 import IdeaCard from "@/components/IdeaCard";
 import IdeaFormDialog from "@/components/IdeaFormDialog";
 import PublishLinkDialog from "@/components/PublishLinkDialog";
+import GoalPlanDialog from "@/components/GoalPlanDialog";
 import SkeletonCard from "@/components/SkeletonCard";
 import { useToolStore } from "@/hooks/useToolStore";
 import { Tool, Idea } from "@/types/tool";
@@ -28,6 +29,7 @@ export default function Index() {
   const [ideaDialogOpen, setIdeaDialogOpen] = useState(false);
   const [editIdea, setEditIdea] = useState<Idea | null>(null);
   const [publishLinkTool, setPublishLinkTool] = useState<Tool | null>(null);
+  const [planTool, setPlanTool] = useState<Tool | null>(null);
 
   const filtered = useMemo(() => {
     let result = tools;
@@ -55,6 +57,21 @@ export default function Index() {
   const handleEditTool = (tool: Tool) => { setEditTool(tool); setToolDialogOpen(true); };
   const handleDeleteTool = (id: string) => { if (confirm("Hapus tool ini?")) deleteTool(id); };
 
+  const handleGoalSubmit = (toolData: any) => {
+    // Find the tool that was just created (last one)
+    setTimeout(() => {
+      const latest = tools[tools.length - 1];
+      // Actually we need to find by name since addTool is async
+      const found = tools.find((t) => t.name === toolData.name && t.goal === toolData.goal);
+      if (found) {
+        setPlanTool(found);
+      }
+    }, 100);
+  };
+
+  // Keep planTool synced with latest tool data
+  const currentPlanTool = planTool ? tools.find((t) => t.id === planTool.id) || planTool : null;
+
   const handleSaveIdea = (data: any) => {
     if (editIdea) updateIdea(editIdea.id, data);
     else addIdea(data);
@@ -70,6 +87,10 @@ export default function Index() {
 
   const handleMoveIdea = (id: string) => {
     if (confirm("Pindahkan ide ini ke Tool Tracker?")) moveIdeaToTool(id);
+  };
+
+  const handleOpenPlan = (tool: Tool) => {
+    setPlanTool(tool);
   };
 
   return (
@@ -151,6 +172,7 @@ export default function Index() {
                     onToggleDone={toggleToolDone}
                     onToggleNote={toggleNote}
                     onPublishLink={(t) => setPublishLinkTool(t)}
+                    onOpenPlan={handleOpenPlan}
                   />
                 ))}
               </div>
@@ -194,6 +216,13 @@ export default function Index() {
         onClose={() => { setToolDialogOpen(false); setEditTool(null); }}
         onSave={handleSaveTool}
         editTool={editTool}
+        onGoalSubmit={(data) => {
+          // After tool is saved, open plan dialog for it
+          setTimeout(() => {
+            const found = tools.find((t) => t.name === data.name);
+            if (found) setPlanTool(found);
+          }, 200);
+        }}
       />
 
       <IdeaFormDialog
@@ -208,6 +237,13 @@ export default function Index() {
         onClose={() => setPublishLinkTool(null)}
         onSave={handlePublishLink}
         toolName={publishLinkTool?.name || ""}
+      />
+
+      <GoalPlanDialog
+        open={!!currentPlanTool}
+        tool={currentPlanTool}
+        onClose={() => setPlanTool(null)}
+        onUpdateTool={updateTool}
       />
     </div>
   );
