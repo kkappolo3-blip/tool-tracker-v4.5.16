@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Tool, ToolStatus, ToolCategory } from "@/types/tool";
-import { X } from "lucide-react";
+import { X, Sparkles } from "lucide-react";
 
 const PLATFORMS = ["Lovable", "Replit", "Atoms", "Canvas Gemini", "GPT Codex", "Z.ai", "Manual Coding", "Lainnya"];
 const ACCOUNTS = ["koleksigibi@gmail.com", "gibikey.studio@gmail.com", "Lainnya"];
@@ -10,11 +10,12 @@ const CATEGORIES: ToolCategory[] = ["Dijual", "Internal", "Polri"];
 interface ToolFormDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (data: Omit<Tool, "id" | "notes" | "done"> | Partial<Tool>) => void;
+  onSave: (data: Omit<Tool, "id" | "notes" | "done" | "planSteps" | "smallSteps" | "planStatus"> | Partial<Tool>) => void;
   editTool?: Tool | null;
+  onGoalSubmit?: (toolData: any) => void;
 }
 
-export default function ToolFormDialog({ open, onClose, onSave, editTool }: ToolFormDialogProps) {
+export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoalSubmit }: ToolFormDialogProps) {
   const [name, setName] = useState("");
   const [status, setStatus] = useState<ToolStatus>("Draft");
   const [description, setDescription] = useState("");
@@ -29,6 +30,7 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool }: Tool
   const [categories, setCategories] = useState<ToolCategory[]>([]);
   const [price, setPrice] = useState("");
   const [target, setTarget] = useState("");
+  const [goal, setGoal] = useState("");
 
   useEffect(() => {
     if (editTool) {
@@ -38,10 +40,11 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool }: Tool
       setLink(editTool.link || ""); setDeployMethod(editTool.deployMethod || "");
       setDeployEmail(editTool.deployEmail || ""); setReleaseDate(editTool.releaseDate || "");
       setCategories(editTool.categories || []); setPrice(editTool.price || ""); setTarget(editTool.target || "");
+      setGoal(editTool.goal || "");
     } else {
       setName(""); setStatus("Draft"); setDescription(""); setCreatedMethod(""); setCreatedBy("");
       setGithubAccount(""); setVersion(""); setLink(""); setDeployMethod(""); setDeployEmail("");
-      setReleaseDate(""); setCategories([]); setPrice(""); setTarget("");
+      setReleaseDate(""); setCategories([]); setPrice(""); setTarget(""); setGoal("");
     }
   }, [editTool, open]);
 
@@ -53,8 +56,19 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool }: Tool
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ name, status, description, createdMethod, createdBy, githubAccount, version, link, deployMethod, deployEmail, releaseDate, categories, price, target });
+    const data = { name, status, description, createdMethod, createdBy, githubAccount, version, link, deployMethod, deployEmail, releaseDate, categories, price, target, goal };
+    onSave(data);
     onClose();
+  };
+
+  const handleGoalAI = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!goal.trim() || !name.trim()) return;
+    const data = { name, status, description, createdMethod, createdBy, githubAccount, version, link, deployMethod, deployEmail, releaseDate, categories, price, target, goal };
+    onSave(data);
+    onClose();
+    // Trigger AI plan generation
+    onGoalSubmit?.(data);
   };
 
   const inputClass = "w-full bg-muted/50 border border-border/60 rounded-xl px-3 py-2.5 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all";
@@ -76,6 +90,20 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool }: Tool
             <label className={labelClass}>Deskripsi</label>
             <textarea className={inputClass} placeholder="Deskripsi singkat..." value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
           </div>
+
+          {/* Goal field */}
+          <div>
+            <label className={labelClass}>🎯 Goal</label>
+            <textarea
+              className={inputClass}
+              placeholder="Tulis goal utama tool ini, misal: Foto TimeSTAMP, Aplikasi kasir sederhana..."
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+              rows={3}
+            />
+            <p className="text-xs text-muted-foreground mt-1">AI akan membantu memecah goal ini menjadi langkah-langkah pembuatan</p>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Dibuat di</label>
@@ -126,7 +154,6 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool }: Tool
             </div>
           </div>
 
-          {/* Categories */}
           <div>
             <label className={labelClass}>Kategori Status</label>
             <div className="flex gap-2 flex-wrap">
@@ -178,9 +205,21 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool }: Tool
             </div>
           </div>
 
-          <button type="submit" className="bg-primary text-primary-foreground rounded-xl px-4 py-2.5 font-semibold text-sm mt-1 hover:opacity-90 transition-all hover:shadow-lg hover:shadow-primary/20">
-            {editTool ? "Simpan Perubahan" : "Buat Tool"}
-          </button>
+          <div className="flex gap-2">
+            <button type="submit" className="flex-1 bg-primary text-primary-foreground rounded-xl px-4 py-2.5 font-semibold text-sm hover:opacity-90 transition-all hover:shadow-lg hover:shadow-primary/20">
+              {editTool ? "Simpan Perubahan" : "Buat Tool"}
+            </button>
+            {goal.trim() && name.trim() && !editTool && (
+              <button
+                type="button"
+                onClick={handleGoalAI}
+                className="flex items-center gap-2 bg-accent text-accent-foreground rounded-xl px-4 py-2.5 font-semibold text-sm hover:opacity-90 transition-all hover:shadow-lg border border-primary/30"
+              >
+                <Sparkles size={16} className="text-primary" />
+                Buat + AI Plan
+              </button>
+            )}
+          </div>
         </form>
       </div>
     </div>
