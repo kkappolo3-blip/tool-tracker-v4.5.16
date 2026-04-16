@@ -9,6 +9,20 @@ export interface ToolNote {
   done: boolean;
 }
 
+export interface PlanStep {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+export interface SmallStep {
+  id: string;
+  parentStepId: string;
+  text: string;
+  workerNote: string;
+  done: boolean;
+}
+
 export interface Tool {
   id: string;
   name: string;
@@ -27,6 +41,11 @@ export interface Tool {
   target?: string;
   notes: ToolNote[];
   done: boolean;
+  goal?: string;
+  planSteps: PlanStep[];
+  smallSteps: SmallStep[];
+  planStatus?: "none" | "generated" | "executing" | "reviewing" | "done";
+  aiReport?: string;
 }
 
 export interface Idea {

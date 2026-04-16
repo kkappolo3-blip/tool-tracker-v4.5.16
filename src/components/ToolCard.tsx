@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Tool } from "@/types/tool";
-import { Edit2, Trash2, ChevronDown, ChevronUp, ExternalLink, CheckCircle2, Circle, Link2 } from "lucide-react";
+import { Edit2, Trash2, ChevronDown, ChevronUp, ExternalLink, CheckCircle2, Circle, Link2, Sparkles, Target } from "lucide-react";
 
 interface ToolCardProps {
   tool: Tool;
@@ -9,12 +9,27 @@ interface ToolCardProps {
   onToggleDone: (id: string) => void;
   onToggleNote: (toolId: string, noteId: string) => void;
   onPublishLink: (tool: Tool) => void;
+  onOpenPlan: (tool: Tool) => void;
 }
 
-export default function ToolCard({ tool, onEdit, onDelete, onToggleDone, onToggleNote, onPublishLink }: ToolCardProps) {
+export default function ToolCard({ tool, onEdit, onDelete, onToggleDone, onToggleNote, onPublishLink, onOpenPlan }: ToolCardProps) {
   const [notesOpen, setNotesOpen] = useState(false);
   const isPublished = tool.status === "Published";
   const doneNotes = tool.notes.filter((n) => n.done).length;
+  const doneSmallSteps = tool.smallSteps?.filter((s) => s.done).length || 0;
+  const totalSmallSteps = tool.smallSteps?.length || 0;
+
+  const planStatusLabel = () => {
+    switch (tool.planStatus) {
+      case "generated": return { text: "Plan Ready", color: "text-status-draft" };
+      case "executing": return { text: `Executing ${doneSmallSteps}/${totalSmallSteps}`, color: "text-primary" };
+      case "reviewing": return { text: "Reviewing", color: "text-amber-400" };
+      case "done": return { text: "Plan Done", color: "text-status-published" };
+      default: return null;
+    }
+  };
+
+  const planLabel = planStatusLabel();
 
   return (
     <div className={`bg-card rounded-2xl border border-border/60 p-5 flex flex-col gap-3 transition-all duration-200 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/30 ${tool.done ? "opacity-60" : ""}`}>
@@ -39,10 +54,18 @@ export default function ToolCard({ tool, onEdit, onDelete, onToggleDone, onToggl
               {tool.categories.map((cat) => (
                 <span key={cat} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{cat}</span>
               ))}
+              {planLabel && (
+                <span className={`text-xs font-medium ${planLabel.color}`}>• {planLabel.text}</span>
+              )}
             </div>
           </div>
         </div>
         <div className="flex gap-0.5">
+          {tool.goal && (
+            <button onClick={() => onOpenPlan(tool)} className="p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors" title="AI Plan">
+              <Sparkles size={15} />
+            </button>
+          )}
           {tool.status === "Published" && !tool.link && (
             <button onClick={() => onPublishLink(tool)} className="p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors" title="Tambah link">
               <Link2 size={15} />
@@ -56,6 +79,14 @@ export default function ToolCard({ tool, onEdit, onDelete, onToggleDone, onToggl
           </button>
         </div>
       </div>
+
+      {/* Goal */}
+      {tool.goal && (
+        <div className="flex items-start gap-2 pl-8">
+          <Target size={13} className="text-primary mt-0.5 shrink-0" />
+          <p className="text-primary/80 text-xs font-medium line-clamp-1">{tool.goal}</p>
+        </div>
+      )}
 
       {/* Description */}
       {tool.description && (
@@ -97,14 +128,25 @@ export default function ToolCard({ tool, onEdit, onDelete, onToggleDone, onToggl
         )}
       </div>
 
-      {/* Progress */}
+      {/* Plan progress */}
+      {totalSmallSteps > 0 && (
+        <div className="pl-8">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles size={11} className="text-primary" />
+            <span className="text-xs text-muted-foreground">AI Plan Progress</span>
+            <span className="text-xs text-primary font-semibold">{doneSmallSteps}/{totalSmallSteps}</span>
+          </div>
+          <div className="h-1 rounded-full bg-muted overflow-hidden">
+            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${(doneSmallSteps / totalSmallSteps) * 100}%` }} />
+          </div>
+        </div>
+      )}
+
+      {/* Notes progress */}
       {tool.notes.length > 0 && (
         <div className="pl-8">
           <div className="h-1 rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full rounded-full bg-primary transition-all"
-              style={{ width: `${(doneNotes / tool.notes.length) * 100}%` }}
-            />
+            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${(doneNotes / tool.notes.length) * 100}%` }} />
           </div>
         </div>
       )}
