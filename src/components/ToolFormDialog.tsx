@@ -2,9 +2,8 @@ import { useState, useEffect } from "react";
 import { Tool, ToolStatus, ToolCategory } from "@/types/tool";
 import { X, Sparkles, Plus } from "lucide-react";
 import { useSavedEmails } from "@/hooks/useSavedEmails";
+import { useSavedPlatforms, useSavedGithubAccounts, useSavedDeployPlatforms } from "@/hooks/useSavedOptions";
 
-const PLATFORMS = ["Lovable", "Replit", "Atoms", "Canvas Gemini", "GPT Codex", "Z.ai", "Manual Coding", "Lainnya"];
-const GITHUB_ACCOUNTS = ["gibikey", "koleksigibi", "Lainnya"];
 const CATEGORIES: ToolCategory[] = ["Dijual", "Internal", "Polri"];
 
 interface ToolFormDialogProps {
