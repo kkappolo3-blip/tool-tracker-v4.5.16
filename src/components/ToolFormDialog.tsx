@@ -146,10 +146,25 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoal
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Dibuat di</label>
-              <select className={inputClass} value={createdMethod} onChange={(e) => setCreatedMethod(e.target.value)}>
-                <option value="">Pilih platform...</option>
-                {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
+              {addingPlatform ? (
+                <div className="flex gap-1">
+                  <input autoFocus className={inputClass} placeholder="Nama platform..."
+                    value={newPlatform} onChange={(e) => setNewPlatform(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); confirmNewPlatform(); } }} />
+                  <button type="button" onClick={confirmNewPlatform} className="px-3 bg-primary text-primary-foreground rounded-xl text-xs font-semibold">OK</button>
+                </div>
+              ) : (
+                <div className="flex gap-1">
+                  <select className={inputClass} value={createdMethod} onChange={(e) => setCreatedMethod(e.target.value)}>
+                    <option value="">Pilih platform...</option>
+                    {platforms.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                  <button type="button" onClick={() => setAddingPlatform(true)} title="Tambah platform baru"
+                    className="px-2 bg-muted hover:bg-primary/10 hover:text-primary rounded-xl border border-border text-muted-foreground transition-colors">
+                    <Plus size={14} />
+                  </button>
+                </div>
+              )}
             </div>
             <div>
               <label className={labelClass}>Akun / Email</label>
@@ -176,18 +191,48 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoal
           </div>
           <div>
             <label className={labelClass}>Akun GitHub</label>
-            <select className={inputClass} value={githubAccount} onChange={(e) => setGithubAccount(e.target.value)}>
-              <option value="">Pilih GitHub...</option>
-              {GITHUB_ACCOUNTS.map((g) => <option key={g} value={g}>{g}</option>)}
-            </select>
+            {addingGithub ? (
+              <div className="flex gap-1">
+                <input autoFocus className={inputClass} placeholder="Username GitHub..."
+                  value={newGithub} onChange={(e) => setNewGithub(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); confirmNewGithub(); } }} />
+                <button type="button" onClick={confirmNewGithub} className="px-3 bg-primary text-primary-foreground rounded-xl text-xs font-semibold">OK</button>
+              </div>
+            ) : (
+              <div className="flex gap-1">
+                <select className={inputClass} value={githubAccount} onChange={(e) => setGithubAccount(e.target.value)}>
+                  <option value="">Pilih GitHub...</option>
+                  {githubAccounts.map((g) => <option key={g} value={g}>{g}</option>)}
+                </select>
+                <button type="button" onClick={() => setAddingGithub(true)} title="Tambah akun GitHub baru"
+                  className="px-2 bg-muted hover:bg-primary/10 hover:text-primary rounded-xl border border-border text-muted-foreground transition-colors">
+                  <Plus size={14} />
+                </button>
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Deploy di</label>
-              <select className={inputClass} value={deployMethod} onChange={(e) => setDeployMethod(e.target.value)}>
-                <option value="">Pilih platform...</option>
-                {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
+              {addingDeployPlatform ? (
+                <div className="flex gap-1">
+                  <input autoFocus className={inputClass} placeholder="Nama platform..."
+                    value={newDeployPlatform} onChange={(e) => setNewDeployPlatform(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); confirmNewDeployPlatform(); } }} />
+                  <button type="button" onClick={confirmNewDeployPlatform} className="px-3 bg-primary text-primary-foreground rounded-xl text-xs font-semibold">OK</button>
+                </div>
+              ) : (
+                <div className="flex gap-1">
+                  <select className={inputClass} value={deployMethod} onChange={(e) => setDeployMethod(e.target.value)}>
+                    <option value="">Pilih platform...</option>
+                    {deployPlatforms.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                  <button type="button" onClick={() => setAddingDeployPlatform(true)} title="Tambah platform baru"
+                    className="px-2 bg-muted hover:bg-primary/10 hover:text-primary rounded-xl border border-border text-muted-foreground transition-colors">
+                    <Plus size={14} />
+                  </button>
+                </div>
+              )}
             </div>
             <div>
               <label className={labelClass}>Akun Deploy</label>
