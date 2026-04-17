@@ -61,7 +61,31 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoal
     }
     setAddingCreatedBy(false); setNewCreatedBy("");
     setAddingDeployEmail(false); setNewDeployEmail("");
+    setAddingPlatform(false); setNewPlatform("");
+    setAddingGithub(false); setNewGithub("");
+    setAddingDeployPlatform(false); setNewDeployPlatform("");
   }, [editTool, open]);
+
+  const confirmNewCreatedBy = () => {
+    const e = newCreatedBy.trim(); if (!e) return;
+    addEmail(e); setCreatedBy(e); setNewCreatedBy(""); setAddingCreatedBy(false);
+  };
+  const confirmNewDeployEmail = () => {
+    const e = newDeployEmail.trim(); if (!e) return;
+    addEmail(e); setDeployEmail(e); setNewDeployEmail(""); setAddingDeployEmail(false);
+  };
+  const confirmNewPlatform = () => {
+    const v = newPlatform.trim(); if (!v) return;
+    addPlatform(v); setCreatedMethod(v); setNewPlatform(""); setAddingPlatform(false);
+  };
+  const confirmNewGithub = () => {
+    const v = newGithub.trim(); if (!v) return;
+    addGithubAccount(v); setGithubAccount(v); setNewGithub(""); setAddingGithub(false);
+  };
+  const confirmNewDeployPlatform = () => {
+    const v = newDeployPlatform.trim(); if (!v) return;
+    addDeployPlatform(v); setDeployMethod(v); setNewDeployPlatform(""); setAddingDeployPlatform(false);
+  };
 
   const confirmNewCreatedBy = () => {
     const e = newCreatedBy.trim();
