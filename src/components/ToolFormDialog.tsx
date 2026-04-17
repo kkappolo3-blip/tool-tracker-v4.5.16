@@ -16,6 +16,9 @@ interface ToolFormDialogProps {
 
 export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoalSubmit }: ToolFormDialogProps) {
   const { emails, addEmail } = useSavedEmails();
+  const { platforms, addPlatform } = useSavedPlatforms();
+  const { githubAccounts, addGithubAccount } = useSavedGithubAccounts();
+  const { deployPlatforms, addDeployPlatform } = useSavedDeployPlatforms();
   const [name, setName] = useState("");
   const [status, setStatus] = useState<ToolStatus>("Draft");
   const [description, setDescription] = useState("");
@@ -35,6 +38,12 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoal
   const [newCreatedBy, setNewCreatedBy] = useState("");
   const [addingDeployEmail, setAddingDeployEmail] = useState(false);
   const [newDeployEmail, setNewDeployEmail] = useState("");
+  const [addingPlatform, setAddingPlatform] = useState(false);
+  const [newPlatform, setNewPlatform] = useState("");
+  const [addingGithub, setAddingGithub] = useState(false);
+  const [newGithub, setNewGithub] = useState("");
+  const [addingDeployPlatform, setAddingDeployPlatform] = useState(false);
+  const [newDeployPlatform, setNewDeployPlatform] = useState("");
 
   useEffect(() => {
     if (editTool) {
