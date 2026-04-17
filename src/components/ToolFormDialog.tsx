@@ -16,6 +16,7 @@ interface ToolFormDialogProps {
 }
 
 export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoalSubmit }: ToolFormDialogProps) {
+  const { emails, addEmail } = useSavedEmails();
   const [name, setName] = useState("");
   const [status, setStatus] = useState<ToolStatus>("Draft");
   const [description, setDescription] = useState("");
@@ -31,6 +32,10 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoal
   const [price, setPrice] = useState("");
   const [target, setTarget] = useState("");
   const [goal, setGoal] = useState("");
+  const [addingCreatedBy, setAddingCreatedBy] = useState(false);
+  const [newCreatedBy, setNewCreatedBy] = useState("");
+  const [addingDeployEmail, setAddingDeployEmail] = useState(false);
+  const [newDeployEmail, setNewDeployEmail] = useState("");
 
   useEffect(() => {
     if (editTool) {
@@ -46,7 +51,21 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoal
       setGithubAccount(""); setVersion(""); setLink(""); setDeployMethod(""); setDeployEmail("");
       setReleaseDate(""); setCategories([]); setPrice(""); setTarget(""); setGoal("");
     }
+    setAddingCreatedBy(false); setNewCreatedBy("");
+    setAddingDeployEmail(false); setNewDeployEmail("");
   }, [editTool, open]);
+
+  const confirmNewCreatedBy = () => {
+    const e = newCreatedBy.trim();
+    if (!e) return;
+    addEmail(e); setCreatedBy(e); setNewCreatedBy(""); setAddingCreatedBy(false);
+  };
+  const confirmNewDeployEmail = () => {
+    const e = newDeployEmail.trim();
+    if (!e) return;
+    addEmail(e); setDeployEmail(e); setNewDeployEmail(""); setAddingDeployEmail(false);
+  };
+
 
   if (!open) return null;
 
