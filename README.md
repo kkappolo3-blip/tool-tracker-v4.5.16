@@ -1,3 +1,3 @@
-# Welcome to your Lovable project
+# Gibikey Studio — Tool Tracker
 
-TODO: Document your project here
+Dashboard untuk tracking semua tool yang dibuat oleh Gibikey Studio.
