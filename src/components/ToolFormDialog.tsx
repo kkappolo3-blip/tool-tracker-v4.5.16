@@ -87,18 +87,6 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoal
     addDeployPlatform(v); setDeployMethod(v); setNewDeployPlatform(""); setAddingDeployPlatform(false);
   };
 
-  const confirmNewCreatedBy = () => {
-    const e = newCreatedBy.trim();
-    if (!e) return;
-    addEmail(e); setCreatedBy(e); setNewCreatedBy(""); setAddingCreatedBy(false);
-  };
-  const confirmNewDeployEmail = () => {
-    const e = newDeployEmail.trim();
-    if (!e) return;
-    addEmail(e); setDeployEmail(e); setNewDeployEmail(""); setAddingDeployEmail(false);
-  };
-
-
   if (!open) return null;
 
   const toggleCategory = (cat: ToolCategory) => {
