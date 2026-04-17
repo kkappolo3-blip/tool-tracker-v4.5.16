@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Search, X, Lightbulb, Wrench, PackageOpen } from "lucide-react";
+import { Plus, Search, X, Lightbulb, PackageOpen } from "lucide-react";
 import Header from "@/components/Header";
 import ToolCard from "@/components/ToolCard";
 import ToolFormDialog from "@/components/ToolFormDialog";
@@ -11,18 +11,17 @@ import SkeletonCard from "@/components/SkeletonCard";
 import { useToolStore } from "@/hooks/useToolStore";
 import { Tool, Idea } from "@/types/tool";
 
-type Tab = "Tool" | "Ide";
-type Filter = "Semua" | "Published" | "Draft";
+type Filter = "all" | "live" | "draft" | "idea";
 
 export default function Index() {
   const {
-    tools, addTool, updateTool, deleteTool, toggleToolDone, toggleNote,
+    tools, addTool, updateTool, deleteTool, toggleToolDone,
+    addNote, deleteNote, toggleNote, editNote,
     ideas, addIdea, updateIdea, deleteIdea, moveIdeaToTool,
     stats, loading,
   } = useToolStore();
 
-  const [tab, setTab] = useState<Tab>("Tool");
-  const [filter, setFilter] = useState<Filter>("Semua");
+  const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
   const [toolDialogOpen, setToolDialogOpen] = useState(false);
   const [editTool, setEditTool] = useState<Tool | null>(null);
@@ -31,10 +30,12 @@ export default function Index() {
   const [publishLinkTool, setPublishLinkTool] = useState<Tool | null>(null);
   const [planTool, setPlanTool] = useState<Tool | null>(null);
 
-  const filtered = useMemo(() => {
+  const showingIdeas = filter === "idea";
+
+  const filteredTools = useMemo(() => {
     let result = tools;
-    if (filter === "Published") result = result.filter((t) => t.status === "Published");
-    if (filter === "Draft") result = result.filter((t) => t.status === "Draft");
+    if (filter === "live") result = result.filter((t) => t.status === "Published");
+    if (filter === "draft") result = result.filter((t) => t.status === "Draft");
     if (search) {
       const q = search.toLowerCase();
       result = result.filter((t) => t.name.toLowerCase().includes(q));
@@ -57,19 +58,6 @@ export default function Index() {
   const handleEditTool = (tool: Tool) => { setEditTool(tool); setToolDialogOpen(true); };
   const handleDeleteTool = (id: string) => { if (confirm("Hapus tool ini?")) deleteTool(id); };
 
-  const handleGoalSubmit = (toolData: any) => {
-    // Find the tool that was just created (last one)
-    setTimeout(() => {
-      const latest = tools[tools.length - 1];
-      // Actually we need to find by name since addTool is async
-      const found = tools.find((t) => t.name === toolData.name && t.goal === toolData.goal);
-      if (found) {
-        setPlanTool(found);
-      }
-    }, 100);
-  };
-
-  // Keep planTool synced with latest tool data
   const currentPlanTool = planTool ? tools.find((t) => t.id === planTool.id) || planTool : null;
 
   const handleSaveIdea = (data: any) => {
@@ -89,55 +77,20 @@ export default function Index() {
     if (confirm("Pindahkan ide ini ke Tool Tracker?")) moveIdeaToTool(id);
   };
 
-  const handleOpenPlan = (tool: Tool) => {
-    setPlanTool(tool);
-  };
+  const handleOpenPlan = (tool: Tool) => setPlanTool(tool);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header stats={stats} />
+    <div className="min-h-screen">
+      <Header stats={stats} activeFilter={filter} onFilterChange={setFilter} />
 
       <div className="max-w-6xl mx-auto">
-        {/* Tabs & Search */}
-        <div className="px-4 py-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <div className="flex gap-1 bg-muted/40 rounded-xl p-1">
-            {([
-              { key: "Tool" as Tab, icon: <Wrench size={14} />, label: "Tool Tracker" },
-              { key: "Ide" as Tab, icon: <Lightbulb size={14} />, label: "Ide" },
-            ]).map(({ key, icon, label }) => (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  tab === key ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {icon} {label}
-              </button>
-            ))}
-          </div>
-
-          {tab === "Tool" && (
-            <div className="flex gap-1 bg-muted/40 rounded-xl p-1">
-              {(["Semua", "Published", "Draft"] as Filter[]).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    filter === f ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div className="relative flex-1 w-full sm:w-auto sm:max-w-xs ml-auto">
+        {/* Search bar */}
+        <div className="px-4 py-4 flex gap-3 items-center">
+          <div className="relative flex-1 max-w-md">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
-              className="w-full bg-muted/40 border border-border/40 rounded-xl pl-9 pr-9 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-              placeholder="Cari..."
+              className="w-full bg-card border border-border rounded-xl pl-9 pr-9 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all shadow-card"
+              placeholder={showingIdeas ? "Cari ide..." : "Cari tool..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -147,23 +100,26 @@ export default function Index() {
               </button>
             )}
           </div>
+          <span className="text-xs text-muted-foreground font-medium hidden sm:inline">
+            {showingIdeas ? `${filteredIdeas.length} ide` : `${filteredTools.length} tool`}
+          </span>
         </div>
 
         {/* Content */}
-        {tab === "Tool" ? (
+        {!showingIdeas ? (
           <div className="px-4 pb-24">
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
               </div>
-            ) : filtered.length === 0 ? (
+            ) : filteredTools.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
                 <PackageOpen size={48} className="text-muted-foreground/40" />
                 <p className="text-sm">{search ? "Tidak ditemukan" : "Belum ada tool"}</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filtered.map((tool) => (
+                {filteredTools.map((tool) => (
                   <ToolCard
                     key={tool.id}
                     tool={tool}
@@ -171,6 +127,9 @@ export default function Index() {
                     onDelete={handleDeleteTool}
                     onToggleDone={toggleToolDone}
                     onToggleNote={toggleNote}
+                    onAddNote={addNote}
+                    onDeleteNote={deleteNote}
+                    onEditNote={editNote}
                     onPublishLink={(t) => setPublishLinkTool(t)}
                     onOpenPlan={handleOpenPlan}
                   />
@@ -203,10 +162,11 @@ export default function Index() {
       {/* FAB */}
       <button
         onClick={() => {
-          if (tab === "Tool") { setEditTool(null); setToolDialogOpen(true); }
-          else { setEditIdea(null); setIdeaDialogOpen(true); }
+          if (showingIdeas) { setEditIdea(null); setIdeaDialogOpen(true); }
+          else { setEditTool(null); setToolDialogOpen(true); }
         }}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-105 transition-transform z-40"
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-2xl bg-gradient-primary text-primary-foreground shadow-elevated flex items-center justify-center hover:scale-105 transition-transform z-40"
+        title={showingIdeas ? "Tambah Ide" : "Tambah Tool"}
       >
         <Plus size={26} />
       </button>
@@ -217,7 +177,6 @@ export default function Index() {
         onSave={handleSaveTool}
         editTool={editTool}
         onGoalSubmit={(data) => {
-          // After tool is saved, open plan dialog for it
           setTimeout(() => {
             const found = tools.find((t) => t.name === data.name);
             if (found) setPlanTool(found);

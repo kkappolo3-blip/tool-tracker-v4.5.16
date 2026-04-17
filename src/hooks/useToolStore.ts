@@ -113,6 +113,16 @@ export function useToolStore() {
     );
   }, []);
 
+  const editNote = useCallback((toolId: string, noteId: string, text: string) => {
+    setTools((prev) =>
+      prev.map((t) =>
+        t.id === toolId
+          ? { ...t, notes: t.notes.map((n) => (n.id === noteId ? { ...n, text } : n)) }
+          : t
+      )
+    );
+  }, []);
+
   const toggleNote = useCallback((toolId: string, noteId: string) => {
     setTools((prev) =>
       prev.map((t) =>
@@ -199,7 +209,7 @@ export function useToolStore() {
 
   return {
     tools, addTool, updateTool, deleteTool, toggleToolDone,
-    addNote, deleteNote, toggleNote,
+    addNote, deleteNote, toggleNote, editNote,
     setPlanSteps, setSmallSteps, updateSmallStepWorkerNote, toggleSmallStepDone, setAiReport, setPlanStatus,
     ideas, addIdea, updateIdea, deleteIdea, moveIdeaToTool,
     stats, loading,

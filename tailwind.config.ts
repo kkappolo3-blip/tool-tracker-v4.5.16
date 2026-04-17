@@ -61,7 +61,16 @@ export default {
         "status-draft": "hsl(var(--status-draft))",
         "status-pending": "hsl(var(--status-pending))",
         "status-publish": "hsl(var(--status-publish))",
-        "purple-glow": "hsl(var(--purple-glow))",
+        "status-idea": "hsl(var(--status-idea))",
+        "primary-soft": "hsl(var(--primary-soft))",
+      },
+      backgroundImage: {
+        "gradient-primary": "var(--gradient-primary)",
+        "gradient-cool": "var(--gradient-cool)",
+      },
+      boxShadow: {
+        "card": "var(--shadow-card)",
+        "elevated": "var(--shadow-elevated)",
       },
       borderRadius: {
         lg: "var(--radius)",
