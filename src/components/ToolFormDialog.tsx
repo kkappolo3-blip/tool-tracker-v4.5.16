@@ -2,9 +2,8 @@ import { useState, useEffect } from "react";
 import { Tool, ToolStatus, ToolCategory } from "@/types/tool";
 import { X, Sparkles, Plus } from "lucide-react";
 import { useSavedEmails } from "@/hooks/useSavedEmails";
+import { useSavedPlatforms, useSavedGithubAccounts, useSavedDeployPlatforms } from "@/hooks/useSavedOptions";
 
-const PLATFORMS = ["Lovable", "Replit", "Atoms", "Canvas Gemini", "GPT Codex", "Z.ai", "Manual Coding", "Lainnya"];
-const GITHUB_ACCOUNTS = ["gibikey", "koleksigibi", "Lainnya"];
 const CATEGORIES: ToolCategory[] = ["Dijual", "Internal", "Polri"];
 
 interface ToolFormDialogProps {
@@ -17,6 +16,9 @@ interface ToolFormDialogProps {
 
 export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoalSubmit }: ToolFormDialogProps) {
   const { emails, addEmail } = useSavedEmails();
+  const { platforms, addPlatform } = useSavedPlatforms();
+  const { githubAccounts, addGithubAccount } = useSavedGithubAccounts();
+  const { deployPlatforms, addDeployPlatform } = useSavedDeployPlatforms();
   const [name, setName] = useState("");
   const [status, setStatus] = useState<ToolStatus>("Draft");
   const [description, setDescription] = useState("");
@@ -36,6 +38,12 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoal
   const [newCreatedBy, setNewCreatedBy] = useState("");
   const [addingDeployEmail, setAddingDeployEmail] = useState(false);
   const [newDeployEmail, setNewDeployEmail] = useState("");
+  const [addingPlatform, setAddingPlatform] = useState(false);
+  const [newPlatform, setNewPlatform] = useState("");
+  const [addingGithub, setAddingGithub] = useState(false);
+  const [newGithub, setNewGithub] = useState("");
+  const [addingDeployPlatform, setAddingDeployPlatform] = useState(false);
+  const [newDeployPlatform, setNewDeployPlatform] = useState("");
 
   useEffect(() => {
     if (editTool) {
@@ -53,19 +61,31 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoal
     }
     setAddingCreatedBy(false); setNewCreatedBy("");
     setAddingDeployEmail(false); setNewDeployEmail("");
+    setAddingPlatform(false); setNewPlatform("");
+    setAddingGithub(false); setNewGithub("");
+    setAddingDeployPlatform(false); setNewDeployPlatform("");
   }, [editTool, open]);
 
   const confirmNewCreatedBy = () => {
-    const e = newCreatedBy.trim();
-    if (!e) return;
+    const e = newCreatedBy.trim(); if (!e) return;
     addEmail(e); setCreatedBy(e); setNewCreatedBy(""); setAddingCreatedBy(false);
   };
   const confirmNewDeployEmail = () => {
-    const e = newDeployEmail.trim();
-    if (!e) return;
+    const e = newDeployEmail.trim(); if (!e) return;
     addEmail(e); setDeployEmail(e); setNewDeployEmail(""); setAddingDeployEmail(false);
   };
-
+  const confirmNewPlatform = () => {
+    const v = newPlatform.trim(); if (!v) return;
+    addPlatform(v); setCreatedMethod(v); setNewPlatform(""); setAddingPlatform(false);
+  };
+  const confirmNewGithub = () => {
+    const v = newGithub.trim(); if (!v) return;
+    addGithubAccount(v); setGithubAccount(v); setNewGithub(""); setAddingGithub(false);
+  };
+  const confirmNewDeployPlatform = () => {
+    const v = newDeployPlatform.trim(); if (!v) return;
+    addDeployPlatform(v); setDeployMethod(v); setNewDeployPlatform(""); setAddingDeployPlatform(false);
+  };
 
   if (!open) return null;
 
@@ -126,10 +146,25 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoal
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Dibuat di</label>
-              <select className={inputClass} value={createdMethod} onChange={(e) => setCreatedMethod(e.target.value)}>
-                <option value="">Pilih platform...</option>
-                {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
+              {addingPlatform ? (
+                <div className="flex gap-1">
+                  <input autoFocus className={inputClass} placeholder="Nama platform..."
+                    value={newPlatform} onChange={(e) => setNewPlatform(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); confirmNewPlatform(); } }} />
+                  <button type="button" onClick={confirmNewPlatform} className="px-3 bg-primary text-primary-foreground rounded-xl text-xs font-semibold">OK</button>
+                </div>
+              ) : (
+                <div className="flex gap-1">
+                  <select className={inputClass} value={createdMethod} onChange={(e) => setCreatedMethod(e.target.value)}>
+                    <option value="">Pilih platform...</option>
+                    {platforms.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                  <button type="button" onClick={() => setAddingPlatform(true)} title="Tambah platform baru"
+                    className="px-2 bg-muted hover:bg-primary/10 hover:text-primary rounded-xl border border-border text-muted-foreground transition-colors">
+                    <Plus size={14} />
+                  </button>
+                </div>
+              )}
             </div>
             <div>
               <label className={labelClass}>Akun / Email</label>
@@ -156,18 +191,48 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoal
           </div>
           <div>
             <label className={labelClass}>Akun GitHub</label>
-            <select className={inputClass} value={githubAccount} onChange={(e) => setGithubAccount(e.target.value)}>
-              <option value="">Pilih GitHub...</option>
-              {GITHUB_ACCOUNTS.map((g) => <option key={g} value={g}>{g}</option>)}
-            </select>
+            {addingGithub ? (
+              <div className="flex gap-1">
+                <input autoFocus className={inputClass} placeholder="Username GitHub..."
+                  value={newGithub} onChange={(e) => setNewGithub(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); confirmNewGithub(); } }} />
+                <button type="button" onClick={confirmNewGithub} className="px-3 bg-primary text-primary-foreground rounded-xl text-xs font-semibold">OK</button>
+              </div>
+            ) : (
+              <div className="flex gap-1">
+                <select className={inputClass} value={githubAccount} onChange={(e) => setGithubAccount(e.target.value)}>
+                  <option value="">Pilih GitHub...</option>
+                  {githubAccounts.map((g) => <option key={g} value={g}>{g}</option>)}
+                </select>
+                <button type="button" onClick={() => setAddingGithub(true)} title="Tambah akun GitHub baru"
+                  className="px-2 bg-muted hover:bg-primary/10 hover:text-primary rounded-xl border border-border text-muted-foreground transition-colors">
+                  <Plus size={14} />
+                </button>
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Deploy di</label>
-              <select className={inputClass} value={deployMethod} onChange={(e) => setDeployMethod(e.target.value)}>
-                <option value="">Pilih platform...</option>
-                {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
+              {addingDeployPlatform ? (
+                <div className="flex gap-1">
+                  <input autoFocus className={inputClass} placeholder="Nama platform..."
+                    value={newDeployPlatform} onChange={(e) => setNewDeployPlatform(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); confirmNewDeployPlatform(); } }} />
+                  <button type="button" onClick={confirmNewDeployPlatform} className="px-3 bg-primary text-primary-foreground rounded-xl text-xs font-semibold">OK</button>
+                </div>
+              ) : (
+                <div className="flex gap-1">
+                  <select className={inputClass} value={deployMethod} onChange={(e) => setDeployMethod(e.target.value)}>
+                    <option value="">Pilih platform...</option>
+                    {deployPlatforms.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                  <button type="button" onClick={() => setAddingDeployPlatform(true)} title="Tambah platform baru"
+                    className="px-2 bg-muted hover:bg-primary/10 hover:text-primary rounded-xl border border-border text-muted-foreground transition-colors">
+                    <Plus size={14} />
+                  </button>
+                </div>
+              )}
             </div>
             <div>
               <label className={labelClass}>Akun Deploy</label>
