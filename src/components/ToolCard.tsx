@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Tool } from "@/types/tool";
-import { Edit2, Trash2, ChevronDown, ChevronUp, ExternalLink, CheckCircle2, Circle, Link2, Sparkles, Target } from "lucide-react";
+import { Edit2, Trash2, ChevronDown, ChevronUp, ExternalLink, CheckCircle2, Circle, Link2, Sparkles, Target, Plus, X, Check } from "lucide-react";
 
 interface ToolCardProps {
   tool: Tool;
@@ -8,31 +8,58 @@ interface ToolCardProps {
   onDelete: (id: string) => void;
   onToggleDone: (id: string) => void;
   onToggleNote: (toolId: string, noteId: string) => void;
+  onAddNote: (toolId: string, text: string) => void;
+  onDeleteNote: (toolId: string, noteId: string) => void;
+  onEditNote: (toolId: string, noteId: string, text: string) => void;
   onPublishLink: (tool: Tool) => void;
   onOpenPlan: (tool: Tool) => void;
 }
 
-export default function ToolCard({ tool, onEdit, onDelete, onToggleDone, onToggleNote, onPublishLink, onOpenPlan }: ToolCardProps) {
+export default function ToolCard({
+  tool, onEdit, onDelete, onToggleDone, onToggleNote, onAddNote, onDeleteNote, onEditNote, onPublishLink, onOpenPlan,
+}: ToolCardProps) {
   const [notesOpen, setNotesOpen] = useState(false);
+  const [newNote, setNewNote] = useState("");
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+
   const isPublished = tool.status === "Published";
   const doneNotes = tool.notes.filter((n) => n.done).length;
   const doneSmallSteps = tool.smallSteps?.filter((s) => s.done).length || 0;
   const totalSmallSteps = tool.smallSteps?.length || 0;
+  const planInProgress = tool.planStatus && tool.planStatus !== "none" && tool.planStatus !== "done";
 
   const planStatusLabel = () => {
     switch (tool.planStatus) {
-      case "generated": return { text: "Plan Ready", color: "text-status-draft" };
-      case "executing": return { text: `Executing ${doneSmallSteps}/${totalSmallSteps}`, color: "text-primary" };
-      case "reviewing": return { text: "Reviewing", color: "text-amber-400" };
-      case "done": return { text: "Plan Done", color: "text-status-published" };
+      case "generated": return { text: "Plan Siap", color: "text-status-draft" };
+      case "executing": return { text: `Eksekusi ${doneSmallSteps}/${totalSmallSteps}`, color: "text-secondary" };
+      case "reviewing": return { text: "Review AI", color: "text-accent" };
+      case "done": return { text: "Plan Selesai", color: "text-status-published" };
       default: return null;
     }
   };
 
   const planLabel = planStatusLabel();
 
+  const submitNote = () => {
+    if (!newNote.trim()) return;
+    onAddNote(tool.id, newNote.trim());
+    setNewNote("");
+  };
+
+  const startEdit = (id: string, text: string) => {
+    setEditingNoteId(id);
+    setEditingText(text);
+  };
+
+  const saveEdit = (id: string) => {
+    if (editingText.trim()) onEditNote(tool.id, id, editingText.trim());
+    setEditingNoteId(null);
+    setEditingText("");
+  };
+
   return (
-    <div className={`bg-card rounded-2xl border border-border/60 p-5 flex flex-col gap-3 transition-all duration-200 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/30 ${tool.done ? "opacity-60" : ""}`}>
+    <div className={`bg-card rounded-2xl border border-border shadow-card p-5 flex flex-col gap-3 transition-all duration-200 hover:shadow-elevated hover:-translate-y-0.5 ${tool.done ? "opacity-70" : ""}`}>
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
@@ -52,7 +79,7 @@ export default function ToolCard({ tool, onEdit, onDelete, onToggleDone, onToggl
                 <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{tool.version}</span>
               )}
               {tool.categories.map((cat) => (
-                <span key={cat} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{cat}</span>
+                <span key={cat} className="text-xs bg-secondary/15 text-secondary px-2 py-0.5 rounded-full font-medium">{cat}</span>
               ))}
               {planLabel && (
                 <span className={`text-xs font-medium ${planLabel.color}`}>• {planLabel.text}</span>
@@ -61,11 +88,6 @@ export default function ToolCard({ tool, onEdit, onDelete, onToggleDone, onToggl
           </div>
         </div>
         <div className="flex gap-0.5">
-          {tool.goal && (
-            <button onClick={() => onOpenPlan(tool)} className="p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors" title="AI Plan">
-              <Sparkles size={15} />
-            </button>
-          )}
           {tool.status === "Published" && !tool.link && (
             <button onClick={() => onPublishLink(tool)} className="p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors" title="Tambah link">
               <Link2 size={15} />
@@ -84,7 +106,7 @@ export default function ToolCard({ tool, onEdit, onDelete, onToggleDone, onToggl
       {tool.goal && (
         <div className="flex items-start gap-2 pl-8">
           <Target size={13} className="text-primary mt-0.5 shrink-0" />
-          <p className="text-primary/80 text-xs font-medium line-clamp-1">{tool.goal}</p>
+          <p className="text-foreground/80 text-xs font-medium line-clamp-1">{tool.goal}</p>
         </div>
       )}
 
@@ -95,15 +117,15 @@ export default function ToolCard({ tool, onEdit, onDelete, onToggleDone, onToggl
 
       {/* Meta */}
       <div className="flex flex-col gap-1 text-sm pl-8">
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center flex-wrap">
           <span className="text-muted-foreground text-xs">Dibuat di</span>
           <span className="text-foreground font-medium text-xs">{tool.createdMethod || "—"}</span>
           {tool.createdBy && <span className="text-muted-foreground text-xs">· {tool.createdBy}</span>}
         </div>
         {tool.deployMethod && (
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center flex-wrap">
             <span className="text-muted-foreground text-xs">Deploy</span>
-            <span className="text-primary font-medium text-xs">{tool.deployMethod}</span>
+            <span className="text-secondary font-medium text-xs">{tool.deployMethod}</span>
             {tool.deployEmail && <span className="text-muted-foreground text-xs">· {tool.deployEmail}</span>}
           </div>
         )}
@@ -114,70 +136,137 @@ export default function ToolCard({ tool, onEdit, onDelete, onToggleDone, onToggl
           </div>
         )}
         {tool.price && (
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center flex-wrap">
             <span className="text-muted-foreground text-xs">Harga</span>
-            <span className="text-primary font-medium text-xs">{tool.price}</span>
+            <span className="text-primary font-semibold text-xs">{tool.price}</span>
             {tool.target && <span className="text-muted-foreground text-xs">· Target: {tool.target}</span>}
           </div>
         )}
         {tool.link && (
           <a href={tool.link.startsWith("http") ? tool.link : `https://${tool.link}`} target="_blank" rel="noopener noreferrer"
-            className="text-primary hover:underline flex items-center gap-1 text-xs w-fit">
+            className="text-secondary hover:underline flex items-center gap-1 text-xs w-fit">
             <ExternalLink size={11} /> {tool.link}
           </a>
         )}
       </div>
 
-      {/* Plan progress */}
-      {totalSmallSteps > 0 && (
+      {/* AI Plan resume / start button — prominent */}
+      {(tool.goal || planInProgress) && (
         <div className="pl-8">
-          <div className="flex items-center gap-2 mb-1">
-            <Sparkles size={11} className="text-primary" />
-            <span className="text-xs text-muted-foreground">AI Plan Progress</span>
-            <span className="text-xs text-primary font-semibold">{doneSmallSteps}/{totalSmallSteps}</span>
-          </div>
-          <div className="h-1 rounded-full bg-muted overflow-hidden">
-            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${(doneSmallSteps / totalSmallSteps) * 100}%` }} />
-          </div>
-        </div>
-      )}
-
-      {/* Notes progress */}
-      {tool.notes.length > 0 && (
-        <div className="pl-8">
-          <div className="h-1 rounded-full bg-muted overflow-hidden">
-            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${(doneNotes / tool.notes.length) * 100}%` }} />
-          </div>
-        </div>
-      )}
-
-      {/* Notes toggle */}
-      {tool.notes.length > 0 && (
-        <>
           <button
-            onClick={() => setNotesOpen(!notesOpen)}
-            className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors pl-8"
+            onClick={() => onOpenPlan(tool)}
+            className={`w-full flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 transition-all border ${
+              planInProgress
+                ? "bg-gradient-primary text-primary-foreground border-transparent shadow-card pulse-orange"
+                : "bg-primary-soft border-primary/30 text-primary hover:bg-primary/10"
+            }`}
           >
-            <span>Catatan <span className="text-primary font-semibold">{doneNotes}/{tool.notes.length}</span></span>
-            {notesOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            <div className="flex items-center gap-2">
+              <Sparkles size={15} />
+              <span className="text-xs font-bold">
+                {planInProgress ? "Lanjutkan Progress AI" : "Mulai AI Plan"}
+              </span>
+            </div>
+            {totalSmallSteps > 0 && (
+              <span className="text-xs font-semibold opacity-90">{doneSmallSteps}/{totalSmallSteps}</span>
+            )}
           </button>
-          {notesOpen && (
-            <div className="flex flex-col gap-1.5 pl-8 ml-2 border-l-2 border-border/50">
-              {tool.notes.map((note) => (
-                <button
-                  key={note.id}
-                  onClick={() => onToggleNote(tool.id, note.id)}
-                  className="flex items-center gap-2 text-sm text-left hover:bg-muted/50 rounded-lg px-2 py-1 transition-colors"
-                >
-                  {note.done ? <CheckCircle2 size={14} className="text-status-published shrink-0" /> : <Circle size={14} className="text-muted-foreground shrink-0" />}
-                  <span className={note.done ? "line-through text-muted-foreground" : "text-foreground"}>{note.text}</span>
-                  <span className="text-xs text-muted-foreground ml-auto shrink-0">{note.createdAt}</span>
-                </button>
-              ))}
+          {totalSmallSteps > 0 && (
+            <div className="h-1 rounded-full bg-muted overflow-hidden mt-2">
+              <div className="h-full rounded-full bg-gradient-primary transition-all" style={{ width: `${(doneSmallSteps / totalSmallSteps) * 100}%` }} />
             </div>
           )}
-        </>
+        </div>
       )}
+
+      {/* Notes section */}
+      <div className="pl-8 pt-1">
+        <button
+          onClick={() => setNotesOpen(!notesOpen)}
+          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <span>
+            Catatan {tool.notes.length > 0 && <span className="text-primary font-semibold">{doneNotes}/{tool.notes.length}</span>}
+          </span>
+          {notesOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+        </button>
+
+        {tool.notes.length > 0 && (
+          <div className="h-1 rounded-full bg-muted overflow-hidden mt-2">
+            <div className="h-full rounded-full bg-status-published transition-all" style={{ width: `${tool.notes.length ? (doneNotes / tool.notes.length) * 100 : 0}%` }} />
+          </div>
+        )}
+
+        {notesOpen && (
+          <div className="flex flex-col gap-1.5 mt-2 ml-1 pl-3 border-l-2 border-border">
+            {tool.notes.map((note) => (
+              <div key={note.id} className="flex items-center gap-2 text-sm group">
+                <button onClick={() => onToggleNote(tool.id, note.id)} className="shrink-0">
+                  {note.done ? <CheckCircle2 size={14} className="text-status-published" /> : <Circle size={14} className="text-muted-foreground" />}
+                </button>
+
+                {editingNoteId === note.id ? (
+                  <>
+                    <input
+                      autoFocus
+                      value={editingText}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") saveEdit(note.id); if (e.key === "Escape") setEditingNoteId(null); }}
+                      className="flex-1 bg-muted border border-border rounded-md px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                    <button onClick={() => saveEdit(note.id)} className="p-1 text-status-published hover:bg-status-published/10 rounded">
+                      <Check size={12} />
+                    </button>
+                    <button onClick={() => setEditingNoteId(null)} className="p-1 text-muted-foreground hover:bg-muted rounded">
+                      <X size={12} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span
+                      onClick={() => onToggleNote(tool.id, note.id)}
+                      className={`flex-1 cursor-pointer ${note.done ? "line-through text-muted-foreground" : "text-foreground"}`}
+                    >
+                      {note.text}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground shrink-0">{note.createdAt}</span>
+                    <button
+                      onClick={() => startEdit(note.id, note.text)}
+                      className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-opacity"
+                    >
+                      <Edit2 size={11} />
+                    </button>
+                    <button
+                      onClick={() => onDeleteNote(tool.id, note.id)}
+                      className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-opacity"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  </>
+                )}
+              </div>
+            ))}
+
+            {/* Add note */}
+            <div className="flex items-center gap-1.5 mt-1">
+              <input
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") submitNote(); }}
+                placeholder="Tulis catatan baru..."
+                className="flex-1 bg-muted border border-border rounded-md px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+              <button
+                onClick={submitNote}
+                disabled={!newNote.trim()}
+                className="p-1.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 disabled:opacity-40 transition-all"
+              >
+                <Plus size={13} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
