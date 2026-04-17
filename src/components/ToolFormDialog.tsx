@@ -133,10 +133,25 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoal
             </div>
             <div>
               <label className={labelClass}>Akun / Email</label>
-              <select className={inputClass} value={createdBy} onChange={(e) => setCreatedBy(e.target.value)}>
-                <option value="">Pilih akun...</option>
-                {ACCOUNTS.map((a) => <option key={a} value={a}>{a}</option>)}
-              </select>
+              {addingCreatedBy ? (
+                <div className="flex gap-1">
+                  <input autoFocus type="email" className={inputClass} placeholder="email@domain.com"
+                    value={newCreatedBy} onChange={(e) => setNewCreatedBy(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); confirmNewCreatedBy(); } }} />
+                  <button type="button" onClick={confirmNewCreatedBy} className="px-3 bg-primary text-primary-foreground rounded-xl text-xs font-semibold">OK</button>
+                </div>
+              ) : (
+                <div className="flex gap-1">
+                  <select className={inputClass} value={createdBy} onChange={(e) => setCreatedBy(e.target.value)}>
+                    <option value="">Pilih akun...</option>
+                    {emails.map((a) => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                  <button type="button" onClick={() => setAddingCreatedBy(true)} title="Tambah email baru"
+                    className="px-2 bg-muted hover:bg-primary/10 hover:text-primary rounded-xl border border-border text-muted-foreground transition-colors">
+                    <Plus size={14} />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
           <div>
@@ -156,10 +171,25 @@ export default function ToolFormDialog({ open, onClose, onSave, editTool, onGoal
             </div>
             <div>
               <label className={labelClass}>Akun Deploy</label>
-              <select className={inputClass} value={deployEmail} onChange={(e) => setDeployEmail(e.target.value)}>
-                <option value="">Pilih akun...</option>
-                {ACCOUNTS.map((a) => <option key={a} value={a}>{a}</option>)}
-              </select>
+              {addingDeployEmail ? (
+                <div className="flex gap-1">
+                  <input autoFocus type="email" className={inputClass} placeholder="email@domain.com"
+                    value={newDeployEmail} onChange={(e) => setNewDeployEmail(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); confirmNewDeployEmail(); } }} />
+                  <button type="button" onClick={confirmNewDeployEmail} className="px-3 bg-primary text-primary-foreground rounded-xl text-xs font-semibold">OK</button>
+                </div>
+              ) : (
+                <div className="flex gap-1">
+                  <select className={inputClass} value={deployEmail} onChange={(e) => setDeployEmail(e.target.value)}>
+                    <option value="">Pilih akun...</option>
+                    {emails.map((a) => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                  <button type="button" onClick={() => setAddingDeployEmail(true)} title="Tambah email baru"
+                    className="px-2 bg-muted hover:bg-primary/10 hover:text-primary rounded-xl border border-border text-muted-foreground transition-colors">
+                    <Plus size={14} />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
