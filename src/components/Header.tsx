@@ -1,4 +1,4 @@
-import { Wrench } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 type FilterKey = "all" | "live" | "draft" | "idea";
 
@@ -13,9 +13,7 @@ export default function Header({ stats, activeFilter, onFilterChange }: HeaderPr
     <header className="sticky top-0 z-30 backdrop-blur-xl bg-card/80 border-b border-border shadow-card">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-elevated">
-            <Wrench size={20} className="text-primary-foreground" />
-          </div>
+          <img src={logo} alt="Gibikey Studio" className="w-10 h-10 rounded-xl object-contain drop-shadow-md" />
           <div>
             <p className="text-primary text-[10px] font-bold tracking-[0.2em]">GIBIKEY STUDIO</p>
             <h1 className="text-foreground font-bold text-lg leading-tight">Tool Tracker</h1>
