@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Tool, ToolStatus, ToolCategory } from "@/types/tool";
-import { X, Sparkles } from "lucide-react";
+import { X, Sparkles, Plus } from "lucide-react";
+import { useSavedEmails } from "@/hooks/useSavedEmails";
 
 const PLATFORMS = ["Lovable", "Replit", "Atoms", "Canvas Gemini", "GPT Codex", "Z.ai", "Manual Coding", "Lainnya"];
-const ACCOUNTS = ["koleksigibi@gmail.com", "gibikey.studio@gmail.com", "Lainnya"];
 const GITHUB_ACCOUNTS = ["gibikey", "koleksigibi", "Lainnya"];
 const CATEGORIES: ToolCategory[] = ["Dijual", "Internal", "Polri"];
 
