@@ -14,7 +14,179 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ideas: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      saved_options: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          user_id: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          user_id: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          user_id?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      tool_notes: {
+        Row: {
+          created_at: string
+          done: boolean
+          id: string
+          text: string
+          tool_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          text: string
+          tool_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          text?: string
+          tool_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_notes_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tools: {
+        Row: {
+          ai_report: string | null
+          categories: string[]
+          created_at: string
+          created_by: string | null
+          created_method: string | null
+          deploy_email: string | null
+          deploy_method: string | null
+          description: string | null
+          done: boolean
+          github_account: string | null
+          goal: string | null
+          id: string
+          link: string | null
+          name: string
+          plan_status: string
+          plan_steps: Json
+          price: string | null
+          release_date: string | null
+          small_steps: Json
+          status: string
+          target: string | null
+          updated_at: string
+          user_id: string
+          version: string | null
+        }
+        Insert: {
+          ai_report?: string | null
+          categories?: string[]
+          created_at?: string
+          created_by?: string | null
+          created_method?: string | null
+          deploy_email?: string | null
+          deploy_method?: string | null
+          description?: string | null
+          done?: boolean
+          github_account?: string | null
+          goal?: string | null
+          id?: string
+          link?: string | null
+          name: string
+          plan_status?: string
+          plan_steps?: Json
+          price?: string | null
+          release_date?: string | null
+          small_steps?: Json
+          status?: string
+          target?: string | null
+          updated_at?: string
+          user_id: string
+          version?: string | null
+        }
+        Update: {
+          ai_report?: string | null
+          categories?: string[]
+          created_at?: string
+          created_by?: string | null
+          created_method?: string | null
+          deploy_email?: string | null
+          deploy_method?: string | null
+          description?: string | null
+          done?: boolean
+          github_account?: string | null
+          goal?: string | null
+          id?: string
+          link?: string | null
+          name?: string
+          plan_status?: string
+          plan_steps?: Json
+          price?: string | null
+          release_date?: string | null
+          small_steps?: Json
+          status?: string
+          target?: string | null
+          updated_at?: string
+          user_id?: string
+          version?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
