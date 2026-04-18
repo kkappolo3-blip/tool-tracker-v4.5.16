@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { Tool, ToolStatus, ToolCategory } from "@/types/tool";
 import { X, Sparkles, Plus } from "lucide-react";
-import { useSavedEmails } from "@/hooks/useSavedEmails";
-import { useSavedPlatforms, useSavedGithubAccounts, useSavedDeployPlatforms } from "@/hooks/useSavedOptions";
+import { useSavedEmails, useSavedPlatforms, useSavedGithubAccounts, useSavedDeployPlatforms } from "@/hooks/useSavedOptions";
 
 const CATEGORIES: ToolCategory[] = ["Dijual", "Internal", "Polri"];
 

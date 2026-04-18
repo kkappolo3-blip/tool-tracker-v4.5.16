@@ -114,16 +114,16 @@ export function useToolStore() {
   // ===== Tools =====
   const addTool = useCallback(async (tool: Omit<Tool, "id" | "notes" | "done" | "planSteps" | "smallSteps" | "planStatus">) => {
     if (!user) return;
-    const payload = { ...toToolPatch(tool as any), user_id: user.id };
-    const { data, error } = await supabase.from("tools").insert(payload).select("*").single();
+    const payload: any = { ...toToolPatch(tool as any), user_id: user.id, name: (tool as any).name ?? "Untitled" };
+    const { data, error } = await supabase.from("tools").insert(payload as any).select("*").single();
     if (error) { console.error(error); return; }
     setTools((p) => [...p, mapTool(data, [])]);
     touch();
   }, [user]);
 
   const updateTool = useCallback(async (id: string, updates: Partial<Tool>) => {
-    const patch = toToolPatch(updates);
-    const { data, error } = await supabase.from("tools").update(patch).eq("id", id).select("*").single();
+    const patch: any = toToolPatch(updates);
+    const { data, error } = await supabase.from("tools").update(patch as any).eq("id", id).select("*").single();
     if (error) { console.error(error); return; }
     setTools((p) => p.map((t) => (t.id === id ? mapTool(data, t.notes) : t)));
     touch();
