@@ -1,4 +1,6 @@
+import { LogOut } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { useAuth } from "@/hooks/useAuth";
 
 type FilterKey = "all" | "live" | "draft" | "idea";
 
@@ -9,6 +11,7 @@ interface HeaderProps {
 }
 
 export default function Header({ stats, activeFilter, onFilterChange }: HeaderProps) {
+  const { user, signOut } = useAuth();
   return (
     <header className="sticky top-0 z-30 backdrop-blur-xl bg-card/80 border-b border-border shadow-card">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
@@ -24,6 +27,15 @@ export default function Header({ stats, activeFilter, onFilterChange }: HeaderPr
           <StatBadge label="Live" value={stats.live} active={activeFilter === "live"} onClick={() => onFilterChange("live")} accent="published" />
           <StatBadge label="Proses" value={stats.draft} active={activeFilter === "draft"} onClick={() => onFilterChange("draft")} accent="draft" />
           <StatBadge label="Ide" value={stats.idea} active={activeFilter === "idea"} onClick={() => onFilterChange("idea")} accent="idea" />
+          {user && (
+            <button
+              onClick={() => signOut()}
+              title={`Logout ${user.email}`}
+              className="ml-1 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs bg-muted hover:bg-destructive/10 hover:text-destructive transition-all"
+            >
+              <LogOut size={13} />
+            </button>
+          )}
         </div>
       </div>
     </header>
