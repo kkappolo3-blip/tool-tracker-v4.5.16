@@ -21,24 +21,28 @@ export default function Auth() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
-    if (password.length < 6) {
-      toast.error("Password minimal 6 karakter");
-      return;
-    }
+    if (!email) return;
     setSubmitting(true);
-    if (mode === "signin") {
-      const { error } = await signIn(email, password);
+    if (mode === "forgot") {
+      const { error } = await resetPassword(email);
       if (error) toast.error(error);
-      else toast.success("Selamat datang kembali!");
+      else { setForgotSent(true); toast.success("Email reset password dikirim"); }
     } else {
-      const { error, needsVerify } = await signUp(email, password);
-      if (error) toast.error(error);
-      else if (needsVerify) {
-        setPendingEmail(email);
-        toast.success("Cek email kamu untuk verifikasi");
+      if (!password) { setSubmitting(false); return; }
+      if (password.length < 6) { toast.error("Password minimal 6 karakter"); setSubmitting(false); return; }
+      if (mode === "signin") {
+        const { error } = await signIn(email, password);
+        if (error) toast.error(error);
+        else toast.success("Selamat datang kembali!");
       } else {
-        toast.success("Akun dibuat!");
+        const { error, needsVerify } = await signUp(email, password);
+        if (error) toast.error(error);
+        else if (needsVerify) {
+          setPendingEmail(email);
+          toast.success("Cek email kamu untuk verifikasi");
+        } else {
+          toast.success("Akun dibuat!");
+        }
       }
     }
     setSubmitting(false);
