@@ -46,6 +46,7 @@ export interface Tool {
   smallSteps: SmallStep[];
   planStatus?: "none" | "generated" | "executing" | "reviewing" | "done";
   aiReport?: string;
+  updatedAt?: string;
 }
 
 export interface Idea {
