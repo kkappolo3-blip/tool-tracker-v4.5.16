@@ -10,6 +10,8 @@ interface AuthCtx {
   signUp: (email: string, password: string) => Promise<{ error?: string; needsVerify?: boolean }>;
   signOut: () => Promise<void>;
   resendVerification: (email: string) => Promise<{ error?: string }>;
+  resetPassword: (email: string) => Promise<{ error?: string }>;
+  updatePassword: (newPassword: string) => Promise<{ error?: string }>;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -68,8 +70,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return error ? { error: error.message } : {};
   };
 
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    return error ? { error: error.message } : {};
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    return error ? { error: error.message } : {};
+  };
+
   return (
-    <Ctx.Provider value={{ user, session, loading, signIn, signUp, signOut, resendVerification }}>
+    <Ctx.Provider value={{ user, session, loading, signIn, signUp, signOut, resendVerification, resetPassword, updatePassword }}>
       {children}
     </Ctx.Provider>
   );

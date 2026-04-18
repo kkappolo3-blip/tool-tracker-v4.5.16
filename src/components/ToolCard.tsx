@@ -1,6 +1,18 @@
 import { useState } from "react";
 import { Tool } from "@/types/tool";
-import { Edit2, Trash2, ChevronDown, ChevronUp, ExternalLink, CheckCircle2, Circle, Link2, Sparkles, Target, Plus, X, Check } from "lucide-react";
+import { Edit2, Trash2, ChevronDown, ChevronUp, ExternalLink, CheckCircle2, Circle, Link2, Sparkles, Target, Plus, X, Check, Clock } from "lucide-react";
+
+function timeAgo(iso?: string) {
+  if (!iso) return null;
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "baru saja";
+  if (m < 60) return `${m} menit lalu`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} jam lalu`;
+  const d = Math.floor(h / 24);
+  return `${d} hari lalu`;
+}
 
 interface ToolCardProps {
   tool: Tool;
@@ -267,6 +279,14 @@ export default function ToolCard({
           </div>
         )}
       </div>
+
+      {/* Per-card watermark */}
+      {tool.updatedAt && (
+        <div className="pl-8 pt-1 flex items-center gap-1 text-[10px] text-muted-foreground/70 border-t border-border/50 mt-1">
+          <Clock size={10} />
+          <span>Diedit {timeAgo(tool.updatedAt)}</span>
+        </div>
+      )}
     </div>
   );
 }
