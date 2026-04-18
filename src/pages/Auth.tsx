@@ -6,13 +6,14 @@ import { Mail, Lock, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 export default function Auth() {
-  const { user, loading, signIn, signUp, resendVerification } = useAuth();
+  const { user, loading, signIn, signUp, resendVerification, resetPassword } = useAuth();
   const nav = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [forgotSent, setForgotSent] = useState(false);
 
   useEffect(() => {
     if (!loading && user) nav("/", { replace: true });
