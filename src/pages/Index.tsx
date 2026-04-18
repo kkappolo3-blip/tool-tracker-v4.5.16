@@ -8,6 +8,7 @@ import IdeaFormDialog from "@/components/IdeaFormDialog";
 import PublishLinkDialog from "@/components/PublishLinkDialog";
 import GoalPlanDialog from "@/components/GoalPlanDialog";
 import SkeletonCard from "@/components/SkeletonCard";
+import Watermark from "@/components/Watermark";
 import { useToolStore } from "@/hooks/useToolStore";
 import { Tool, Idea } from "@/types/tool";
 
@@ -18,7 +19,7 @@ export default function Index() {
     tools, addTool, updateTool, deleteTool, toggleToolDone,
     addNote, deleteNote, toggleNote, editNote,
     ideas, addIdea, updateIdea, deleteIdea, moveIdeaToTool,
-    stats, loading,
+    stats, loading, lastEdit,
   } = useToolStore();
 
   const [filter, setFilter] = useState<Filter>("all");
@@ -204,6 +205,7 @@ export default function Index() {
         onClose={() => setPlanTool(null)}
         onUpdateTool={updateTool}
       />
+      <Watermark lastEdit={lastEdit} />
     </div>
   );
 }
