@@ -109,6 +109,21 @@ export default function Auth() {
                 </button>
               </div>
             </div>
+          ) : forgotSent ? (
+            <div className="text-center py-4 space-y-3">
+              <Mail size={40} className="mx-auto text-primary" />
+              <h2 className="font-semibold">Cek email kamu</h2>
+              <p className="text-sm text-muted-foreground">
+                Link reset password telah dikirim ke<br />
+                <span className="font-medium text-foreground">{email}</span>
+              </p>
+              <button
+                onClick={() => { setForgotSent(false); setMode("signin"); }}
+                className="text-xs text-muted-foreground hover:text-foreground mt-2"
+              >
+                Kembali ke login
+              </button>
+            </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="relative">
@@ -122,26 +137,40 @@ export default function Auth() {
                   className="w-full bg-background border border-border rounded-xl pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password (min 6 karakter)"
-                  className="w-full bg-background border border-border rounded-xl pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </div>
+              {mode !== "forgot" && (
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password (min 6 karakter)"
+                    className="w-full bg-background border border-border rounded-xl pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </div>
+              )}
               <button
                 type="submit"
                 disabled={submitting}
                 className="w-full py-2.5 rounded-xl bg-gradient-primary text-primary-foreground font-medium text-sm shadow-card hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {submitting && <Loader2 size={16} className="animate-spin" />}
-                {mode === "signin" ? "Masuk" : "Daftar & Verifikasi Email"}
+                {mode === "signin" ? "Masuk" : mode === "signup" ? "Daftar & Verifikasi Email" : "Kirim Link Reset"}
               </button>
+              {mode === "signin" && (
+                <button type="button" onClick={() => setMode("forgot")}
+                  className="w-full text-xs text-primary hover:underline">
+                  Lupa password?
+                </button>
+              )}
+              {mode === "forgot" && (
+                <button type="button" onClick={() => setMode("signin")}
+                  className="w-full text-xs text-muted-foreground hover:text-foreground">
+                  Kembali ke login
+                </button>
+              )}
               {mode === "signup" && (
                 <p className="text-xs text-muted-foreground text-center">
                   Setelah daftar, kamu akan menerima email berisi link verifikasi.
