@@ -1,49 +1,51 @@
 import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
-function useSavedList(key: string, defaults: string[]) {
+type Kind = "email" | "platform" | "github" | "deploy";
+
+const PLATFORM_DEFAULTS = ["Lovable", "Replit", "Atoms", "Canvas Gemini", "GPT Codex", "Z.ai", "Manual Coding"];
+const GITHUB_DEFAULTS = ["gibikey", "koleksigibi"];
+const EMAIL_DEFAULTS: string[] = [];
+const DEPLOY_DEFAULTS = PLATFORM_DEFAULTS;
+
+function useSavedKind(kind: Kind, defaults: string[]) {
+  const { user } = useAuth();
   const [items, setItems] = useState<string[]>(defaults);
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const parsed = JSON.parse(raw) as string[];
-        setItems(Array.from(new Set([...defaults, ...parsed])));
-      }
-    } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  const load = useCallback(async () => {
+    if (!user) { setItems(defaults); return; }
+    const { data } = await supabase.from("saved_options").select("value").eq("kind", kind);
+    const stored = (data ?? []).map((r: any) => r.value as string);
+    setItems(Array.from(new Set([...defaults, ...stored])));
+  }, [user, kind, defaults]);
 
-  const add = useCallback((value: string) => {
+  useEffect(() => { load(); }, [load]);
+
+  const add = useCallback(async (value: string) => {
     const v = value.trim();
-    if (!v) return;
-    setItems((prev) => {
-      if (prev.includes(v)) return prev;
-      const next = [...prev, v];
-      try {
-        localStorage.setItem(key, JSON.stringify(next.filter((x) => !defaults.includes(x))));
-      } catch {}
-      return next;
-    });
-  }, [key, defaults]);
+    if (!v || !user) return;
+    setItems((prev) => (prev.includes(v) ? prev : [...prev, v]));
+    if (defaults.includes(v)) return;
+    await supabase.from("saved_options").insert({ user_id: user.id, kind, value: v }).select();
+  }, [user, kind, defaults]);
 
   return { items, add };
 }
 
-const PLATFORM_DEFAULTS = ["Lovable", "Replit", "Atoms", "Canvas Gemini", "GPT Codex", "Z.ai", "Manual Coding"];
-const GITHUB_DEFAULTS = ["gibikey", "koleksigibi"];
-
+export function useSavedEmails() {
+  const { items, add } = useSavedKind("email", EMAIL_DEFAULTS);
+  return { emails: items, addEmail: add };
+}
 export function useSavedPlatforms() {
-  const { items, add } = useSavedList("gibikey_saved_platforms", PLATFORM_DEFAULTS);
+  const { items, add } = useSavedKind("platform", PLATFORM_DEFAULTS);
   return { platforms: items, addPlatform: add };
 }
-
 export function useSavedGithubAccounts() {
-  const { items, add } = useSavedList("gibikey_saved_github", GITHUB_DEFAULTS);
+  const { items, add } = useSavedKind("github", GITHUB_DEFAULTS);
   return { githubAccounts: items, addGithubAccount: add };
 }
-
 export function useSavedDeployPlatforms() {
-  const { items, add } = useSavedList("gibikey_saved_deploy_platforms", PLATFORM_DEFAULTS);
+  const { items, add } = useSavedKind("deploy", DEPLOY_DEFAULTS);
   return { deployPlatforms: items, addDeployPlatform: add };
 }

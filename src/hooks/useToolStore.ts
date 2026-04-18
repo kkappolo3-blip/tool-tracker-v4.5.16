@@ -1,204 +1,268 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Tool, ToolNote, Idea, PlanStep, SmallStep } from "@/types/tool";
 
-const generateId = () => Math.random().toString(36).substring(2, 9);
+type ToolRow = any;
+type NoteRow = any;
+type IdeaRow = any;
 
-const initialTools: Tool[] = [
-  {
-    id: "1",
-    name: "NEW PECAH AI",
-    status: "Draft",
-    description: "https://atoms.dev/chat/26671f5ad7f141a0ad6kkappolo3",
-    createdBy: "koleksigibi@gmail.com",
-    createdMethod: "Atoms",
-    categories: [],
-    notes: [
-      { id: "n1", text: "Setup project structure", createdAt: "2026-04-10", done: true },
-      { id: "n2", text: "Design UI mockup", createdAt: "2026-04-11", done: true },
-      { id: "n3", text: "Implement API integration", createdAt: "2026-04-12", done: false },
-      { id: "n4", text: "Testing phase", createdAt: "2026-04-13", done: false },
-    ],
-    done: false,
-    goal: "Membuat AI yang bisa memecah goal besar menjadi langkah kecil",
-    planSteps: [],
-    smallSteps: [],
-    planStatus: "none",
-  },
-  {
-    id: "2",
-    name: "PECAH AI",
-    status: "Draft",
-    description: "Pecah goal besar jadi langkah-langkah kecil yang bisa langsung dikerjakan.",
-    createdBy: "koleksigibi@gmail.com",
-    createdMethod: "Lovable",
-    categories: [],
-    notes: [
-      { id: "n5", text: "Initial concept", createdAt: "2026-04-09", done: true },
-      { id: "n6", text: "Prototype v1", createdAt: "2026-04-10", done: false },
-      { id: "n7", text: "User feedback", createdAt: "2026-04-12", done: false },
-    ],
-    done: false,
-    planSteps: [],
-    smallSteps: [],
-    planStatus: "none",
-  },
-  {
-    id: "3",
-    name: "Tool Tracker",
-    status: "Published",
-    description: "Dashboard untuk tracking semua tool yang dibuat",
-    createdBy: "koleksigibi@gmail.com",
-    createdMethod: "Replit",
-    deployMethod: "Replit",
-    deployEmail: "koleksigibi@gmail.com",
-    releaseDate: "13 Apr 2026",
-    link: "data-grid-manager--koleksigibi.replit.app",
-    version: "v6.1",
-    categories: ["Internal"],
-    notes: [],
-    done: true,
-    planSteps: [],
-    smallSteps: [],
-    planStatus: "done",
-  },
-];
+const mapTool = (t: ToolRow, notes: ToolNote[]): Tool => ({
+  id: t.id,
+  name: t.name,
+  status: t.status,
+  description: t.description ?? "",
+  createdBy: t.created_by ?? "",
+  createdMethod: t.created_method ?? "",
+  githubAccount: t.github_account ?? undefined,
+  deployMethod: t.deploy_method ?? undefined,
+  deployEmail: t.deploy_email ?? undefined,
+  releaseDate: t.release_date ?? undefined,
+  link: t.link ?? undefined,
+  version: t.version ?? undefined,
+  categories: t.categories ?? [],
+  price: t.price ?? undefined,
+  target: t.target ?? undefined,
+  notes,
+  done: !!t.done,
+  goal: t.goal ?? undefined,
+  planSteps: (t.plan_steps as PlanStep[]) ?? [],
+  smallSteps: (t.small_steps as SmallStep[]) ?? [],
+  planStatus: t.plan_status ?? "none",
+  aiReport: t.ai_report ?? undefined,
+  updatedAt: t.updated_at,
+} as Tool & { updatedAt?: string });
 
-const initialIdeas: Idea[] = [
-  {
-    id: "i1",
-    name: "AI Resume Builder",
-    description: "Tool untuk generate resume dari LinkedIn profile",
-    notes: "Bisa pakai Lovable + OpenAI API",
-    createdAt: "2026-04-12",
-  },
-];
+const mapNote = (n: NoteRow): ToolNote => ({
+  id: n.id,
+  text: n.text,
+  createdAt: (n.created_at ?? "").split("T")[0],
+  done: !!n.done,
+});
+
+const mapIdea = (i: IdeaRow): Idea => ({
+  id: i.id,
+  name: i.name,
+  description: i.description ?? "",
+  notes: i.notes ?? "",
+  createdAt: (i.created_at ?? "").split("T")[0],
+});
+
+const toToolPatch = (u: Partial<Tool>): Record<string, any> => {
+  const m: Record<string, any> = {};
+  if (u.name !== undefined) m.name = u.name;
+  if (u.status !== undefined) m.status = u.status;
+  if (u.description !== undefined) m.description = u.description;
+  if (u.createdBy !== undefined) m.created_by = u.createdBy;
+  if (u.createdMethod !== undefined) m.created_method = u.createdMethod;
+  if (u.githubAccount !== undefined) m.github_account = u.githubAccount;
+  if (u.deployMethod !== undefined) m.deploy_method = u.deployMethod;
+  if (u.deployEmail !== undefined) m.deploy_email = u.deployEmail;
+  if (u.releaseDate !== undefined) m.release_date = u.releaseDate;
+  if (u.link !== undefined) m.link = u.link;
+  if (u.version !== undefined) m.version = u.version;
+  if (u.categories !== undefined) m.categories = u.categories;
+  if (u.price !== undefined) m.price = u.price;
+  if (u.target !== undefined) m.target = u.target;
+  if (u.done !== undefined) m.done = u.done;
+  if (u.goal !== undefined) m.goal = u.goal;
+  if (u.planSteps !== undefined) m.plan_steps = u.planSteps;
+  if (u.smallSteps !== undefined) m.small_steps = u.smallSteps;
+  if (u.planStatus !== undefined) m.plan_status = u.planStatus;
+  if (u.aiReport !== undefined) m.ai_report = u.aiReport;
+  return m;
+};
 
 export function useToolStore() {
-  const [tools, setTools] = useState<Tool[]>(initialTools);
-  const [ideas, setIdeas] = useState<Idea[]>(initialIdeas);
+  const { user } = useAuth();
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [ideas, setIdeas] = useState<Idea[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastEdit, setLastEdit] = useState<string | null>(null);
 
-  useState(() => {
-    setTimeout(() => setLoading(false), 800);
-  });
-
-  const addTool = useCallback((tool: Omit<Tool, "id" | "notes" | "done" | "planSteps" | "smallSteps" | "planStatus">) => {
-    setTools((prev) => [...prev, { ...tool, id: generateId(), notes: [], done: false, planSteps: [], smallSteps: [], planStatus: "none" }]);
-  }, []);
-
-  const updateTool = useCallback((id: string, updates: Partial<Tool>) => {
-    setTools((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
-  }, []);
-
-  const deleteTool = useCallback((id: string) => {
-    setTools((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  const toggleToolDone = useCallback((id: string) => {
-    setTools((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
-  }, []);
-
-  const addNote = useCallback((toolId: string, text: string) => {
-    const note: ToolNote = { id: generateId(), text, createdAt: new Date().toISOString().split("T")[0], done: false };
-    setTools((prev) =>
-      prev.map((t) => (t.id === toolId ? { ...t, notes: [...t.notes, note] } : t))
+  const fetchAll = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const [toolsRes, notesRes, ideasRes] = await Promise.all([
+      supabase.from("tools").select("*").order("created_at", { ascending: true }),
+      supabase.from("tool_notes").select("*").order("created_at", { ascending: true }),
+      supabase.from("ideas").select("*").order("created_at", { ascending: true }),
+    ]);
+    const allNotes = (notesRes.data ?? []) as NoteRow[];
+    const tlist = ((toolsRes.data ?? []) as ToolRow[]).map((t) =>
+      mapTool(t, allNotes.filter((n) => n.tool_id === t.id).map(mapNote))
     );
+    const ilist = ((ideasRes.data ?? []) as IdeaRow[]).map(mapIdea);
+    setTools(tlist);
+    setIdeas(ilist);
+    const latest = [...(toolsRes.data ?? []), ...(ideasRes.data ?? []), ...(notesRes.data ?? [])]
+      .map((r: any) => r.updated_at)
+      .filter(Boolean)
+      .sort()
+      .pop();
+    setLastEdit(latest ?? null);
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    if (user) fetchAll();
+    else { setTools([]); setIdeas([]); setLoading(false); }
+  }, [user, fetchAll]);
+
+  const touch = () => setLastEdit(new Date().toISOString());
+
+  // ===== Tools =====
+  const addTool = useCallback(async (tool: Omit<Tool, "id" | "notes" | "done" | "planSteps" | "smallSteps" | "planStatus">) => {
+    if (!user) return;
+    const payload = { ...toToolPatch(tool as any), user_id: user.id };
+    const { data, error } = await supabase.from("tools").insert(payload).select("*").single();
+    if (error) { console.error(error); return; }
+    setTools((p) => [...p, mapTool(data, [])]);
+    touch();
+  }, [user]);
+
+  const updateTool = useCallback(async (id: string, updates: Partial<Tool>) => {
+    const patch = toToolPatch(updates);
+    const { data, error } = await supabase.from("tools").update(patch).eq("id", id).select("*").single();
+    if (error) { console.error(error); return; }
+    setTools((p) => p.map((t) => (t.id === id ? mapTool(data, t.notes) : t)));
+    touch();
   }, []);
 
-  const deleteNote = useCallback((toolId: string, noteId: string) => {
-    setTools((prev) =>
-      prev.map((t) =>
-        t.id === toolId ? { ...t, notes: t.notes.filter((n) => n.id !== noteId) } : t
-      )
-    );
+  const deleteTool = useCallback(async (id: string) => {
+    const { error } = await supabase.from("tools").delete().eq("id", id);
+    if (error) { console.error(error); return; }
+    setTools((p) => p.filter((t) => t.id !== id));
+    touch();
   }, []);
 
-  const editNote = useCallback((toolId: string, noteId: string, text: string) => {
-    setTools((prev) =>
-      prev.map((t) =>
-        t.id === toolId
-          ? { ...t, notes: t.notes.map((n) => (n.id === noteId ? { ...n, text } : n)) }
-          : t
-      )
-    );
+  const toggleToolDone = useCallback(async (id: string) => {
+    const t = tools.find((x) => x.id === id);
+    if (!t) return;
+    await updateTool(id, { done: !t.done });
+  }, [tools, updateTool]);
+
+  // ===== Notes =====
+  const addNote = useCallback(async (toolId: string, text: string) => {
+    if (!user) return;
+    const { data, error } = await supabase.from("tool_notes").insert({ tool_id: toolId, user_id: user.id, text }).select("*").single();
+    if (error) { console.error(error); return; }
+    setTools((p) => p.map((t) => (t.id === toolId ? { ...t, notes: [...t.notes, mapNote(data)] } : t)));
+    touch();
+  }, [user]);
+
+  const deleteNote = useCallback(async (toolId: string, noteId: string) => {
+    const { error } = await supabase.from("tool_notes").delete().eq("id", noteId);
+    if (error) { console.error(error); return; }
+    setTools((p) => p.map((t) => (t.id === toolId ? { ...t, notes: t.notes.filter((n) => n.id !== noteId) } : t)));
+    touch();
   }, []);
 
-  const toggleNote = useCallback((toolId: string, noteId: string) => {
-    setTools((prev) =>
-      prev.map((t) =>
-        t.id === toolId
-          ? { ...t, notes: t.notes.map((n) => (n.id === noteId ? { ...n, done: !n.done } : n)) }
-          : t
-      )
-    );
+  const editNote = useCallback(async (toolId: string, noteId: string, text: string) => {
+    const { error } = await supabase.from("tool_notes").update({ text }).eq("id", noteId);
+    if (error) { console.error(error); return; }
+    setTools((p) => p.map((t) =>
+      t.id === toolId ? { ...t, notes: t.notes.map((n) => (n.id === noteId ? { ...n, text } : n)) } : t
+    ));
+    touch();
   }, []);
 
-  // Plan management
+  const toggleNote = useCallback(async (toolId: string, noteId: string) => {
+    const tool = tools.find((t) => t.id === toolId);
+    const note = tool?.notes.find((n) => n.id === noteId);
+    if (!note) return;
+    const { error } = await supabase.from("tool_notes").update({ done: !note.done }).eq("id", noteId);
+    if (error) { console.error(error); return; }
+    setTools((p) => p.map((t) =>
+      t.id === toolId ? { ...t, notes: t.notes.map((n) => (n.id === noteId ? { ...n, done: !n.done } : n)) } : t
+    ));
+    touch();
+  }, [tools]);
+
+  // ===== Plan =====
   const setPlanSteps = useCallback((toolId: string, steps: PlanStep[]) => {
-    setTools((prev) => prev.map((t) => (t.id === toolId ? { ...t, planSteps: steps, planStatus: "generated" } : t)));
-  }, []);
+    return updateTool(toolId, { planSteps: steps, planStatus: "generated" });
+  }, [updateTool]);
 
   const setSmallSteps = useCallback((toolId: string, steps: SmallStep[]) => {
-    setTools((prev) => prev.map((t) => (t.id === toolId ? { ...t, smallSteps: steps, planStatus: "executing" } : t)));
-  }, []);
+    return updateTool(toolId, { smallSteps: steps, planStatus: "executing" });
+  }, [updateTool]);
 
   const updateSmallStepWorkerNote = useCallback((toolId: string, stepId: string, workerNote: string) => {
-    setTools((prev) => prev.map((t) => (
-      t.id === toolId
-        ? { ...t, smallSteps: t.smallSteps.map((s) => (s.id === stepId ? { ...s, workerNote } : s)) }
-        : t
-    )));
-  }, []);
+    const t = tools.find((x) => x.id === toolId);
+    if (!t) return;
+    const next = t.smallSteps.map((s) => (s.id === stepId ? { ...s, workerNote } : s));
+    return updateTool(toolId, { smallSteps: next });
+  }, [tools, updateTool]);
 
   const toggleSmallStepDone = useCallback((toolId: string, stepId: string) => {
-    setTools((prev) => prev.map((t) => (
-      t.id === toolId
-        ? { ...t, smallSteps: t.smallSteps.map((s) => (s.id === stepId ? { ...s, done: !s.done } : s)) }
-        : t
-    )));
-  }, []);
+    const t = tools.find((x) => x.id === toolId);
+    if (!t) return;
+    const next = t.smallSteps.map((s) => (s.id === stepId ? { ...s, done: !s.done } : s));
+    return updateTool(toolId, { smallSteps: next });
+  }, [tools, updateTool]);
 
   const setAiReport = useCallback((toolId: string, report: string) => {
-    setTools((prev) => prev.map((t) => (t.id === toolId ? { ...t, aiReport: report, planStatus: "reviewing" } : t)));
-  }, []);
+    return updateTool(toolId, { aiReport: report, planStatus: "reviewing" });
+  }, [updateTool]);
 
   const setPlanStatus = useCallback((toolId: string, status: Tool["planStatus"]) => {
-    setTools((prev) => prev.map((t) => (t.id === toolId ? { ...t, planStatus: status } : t)));
+    return updateTool(toolId, { planStatus: status });
+  }, [updateTool]);
+
+  // ===== Ideas =====
+  const addIdea = useCallback(async (idea: Omit<Idea, "id" | "createdAt">) => {
+    if (!user) return;
+    const { data, error } = await supabase.from("ideas").insert({
+      user_id: user.id, name: idea.name, description: idea.description, notes: idea.notes,
+    }).select("*").single();
+    if (error) { console.error(error); return; }
+    setIdeas((p) => [...p, mapIdea(data)]);
+    touch();
+  }, [user]);
+
+  const updateIdea = useCallback(async (id: string, updates: Partial<Idea>) => {
+    const { data, error } = await supabase.from("ideas").update({
+      ...(updates.name !== undefined && { name: updates.name }),
+      ...(updates.description !== undefined && { description: updates.description }),
+      ...(updates.notes !== undefined && { notes: updates.notes }),
+    }).eq("id", id).select("*").single();
+    if (error) { console.error(error); return; }
+    setIdeas((p) => p.map((i) => (i.id === id ? mapIdea(data) : i)));
+    touch();
   }, []);
 
-  // Ideas
-  const addIdea = useCallback((idea: Omit<Idea, "id" | "createdAt">) => {
-    setIdeas((prev) => [...prev, { ...idea, id: generateId(), createdAt: new Date().toISOString().split("T")[0] }]);
+  const deleteIdea = useCallback(async (id: string) => {
+    const { error } = await supabase.from("ideas").delete().eq("id", id);
+    if (error) { console.error(error); return; }
+    setIdeas((p) => p.filter((i) => i.id !== id));
+    touch();
   }, []);
 
-  const updateIdea = useCallback((id: string, updates: Partial<Idea>) => {
-    setIdeas((prev) => prev.map((i) => (i.id === id ? { ...i, ...updates } : i)));
-  }, []);
-
-  const deleteIdea = useCallback((id: string) => {
-    setIdeas((prev) => prev.filter((i) => i.id !== id));
-  }, []);
-
-  const moveIdeaToTool = useCallback((ideaId: string) => {
+  const moveIdeaToTool = useCallback(async (ideaId: string) => {
+    if (!user) return;
     const idea = ideas.find((i) => i.id === ideaId);
     if (!idea) return;
-    const newTool: Tool = {
-      id: generateId(),
+    const { data: tool, error } = await supabase.from("tools").insert({
+      user_id: user.id,
       name: idea.name,
       status: "Draft",
       description: idea.description,
-      createdBy: "Gibikey Studio",
-      createdMethod: "",
-      categories: [],
-      notes: idea.notes ? [{ id: generateId(), text: idea.notes, createdAt: idea.createdAt, done: false }] : [],
-      done: false,
-      planSteps: [],
-      smallSteps: [],
-      planStatus: "none",
-    };
-    setTools((prev) => [...prev, newTool]);
-    setIdeas((prev) => prev.filter((i) => i.id !== ideaId));
-  }, [ideas]);
+      created_by: "Gibikey Studio",
+    }).select("*").single();
+    if (error) { console.error(error); return; }
+    let initialNotes: ToolNote[] = [];
+    if (idea.notes) {
+      const { data: n } = await supabase.from("tool_notes").insert({
+        tool_id: tool.id, user_id: user.id, text: idea.notes,
+      }).select("*").single();
+      if (n) initialNotes = [mapNote(n)];
+    }
+    await supabase.from("ideas").delete().eq("id", ideaId);
+    setTools((p) => [...p, mapTool(tool, initialNotes)]);
+    setIdeas((p) => p.filter((i) => i.id !== ideaId));
+    touch();
+  }, [ideas, user]);
 
   const stats = {
     total: tools.length,
@@ -212,6 +276,6 @@ export function useToolStore() {
     addNote, deleteNote, toggleNote, editNote,
     setPlanSteps, setSmallSteps, updateSmallStepWorkerNote, toggleSmallStepDone, setAiReport, setPlanStatus,
     ideas, addIdea, updateIdea, deleteIdea, moveIdeaToTool,
-    stats, loading,
+    stats, loading, lastEdit,
   };
 }
